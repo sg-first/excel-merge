@@ -20,16 +20,15 @@ namespace excelMerge2
     /// <summary>
     /// MainWindow.xaml 的交互逻辑
     /// </summary>
-    public partial class MainWindow : Window
+    public class ItemData : TextBlock
     {
-        public MainWindow()
-        {
-            InitializeComponent();
-        }
+        string key;
+        public ItemData(string InKey) { key = InKey; }
+        public string GetKey() { return key; }
+    }
 
-        XLWorkbook LeftBook;
-        XLWorkbook RightBook;
-
+    public static class RowUtils
+    {
         static public Dictionary<string, IXLRow> RowsToDict(IEnumerable<IXLRow> Rows)
         {
             return Rows.GroupBy(r => r.Cell(1).GetString()) //第一个格的元素
@@ -37,76 +36,279 @@ namespace excelMerge2
                        .ToDictionary(g => g.Key, g => g.First()); //主键为g.Key的第一行是g.First
         }
 
-        private void Show_Click(object sender, RoutedEventArgs e)
+        static public void CopyRow(IXLRow sourceRow, IXLRow targetRow)
         {
-            //清空之前list
+            int sourceCount = sourceRow.CellsUsed().Count();
+            for (int i = 1; i <= sourceCount; i++)
+            {
+                string sourceValue = sourceRow.Cell(i).GetString();
+                targetRow.Cell(i).Value = sourceValue;
+            }
+        }
+    }
+
+    public class SafeRow
+    {
+        public IXLRow Data;
+        public SafeRow(IXLRow InData) { Data = InData; }
+        public SafeRow(Dictionary<string, IXLRow> Dict, string Key) { Dict.TryGetValue(Key, out Data); }
+
+        public string GetValue(int i)
+        {
+            if (Data != null)
+            {
+                var Cell = Data.Cell(i);
+                try
+                {
+                    return Cell.GetString();
+                }
+                catch (NotImplementedException)
+                {
+                    return Cell.CachedValue.ToString();
+                }
+            }
+            else
+            {
+                return "";
+            }
+        }
+
+        public int GetCount()
+        {
+            if(Data != null)
+            {
+                return Data.CellsUsed().Count();
+            }
+            else
+            {
+                return 0;
+            }
+        }
+    }
+
+    public partial class MainWindow : Window
+    {
+        public MainWindow()
+        {
+            InitializeComponent();
+        }
+
+        XLWorkbook LeftBook,RightBook;
+        IXLWorksheet LeftSheet, RightSheet;
+        Dictionary<string, IXLRow> LeftRowDict, RightRowDict;
+        Dictionary<string, ItemData> LeftItemDict, RightItemDict;
+        int SheetId = 1;
+
+        ScrollViewer svLeft, svRight;
+        bool bSyncingSv = false;
+
+        ScrollViewer FindScrollViewer(DependencyObject d)
+        {
+            if (d == null) return null;
+            if (d is ScrollViewer) return (ScrollViewer)d;
+
+            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(d); i++)
+            {
+                var child = VisualTreeHelper.GetChild(d, i);
+                var sv = FindScrollViewer(child);
+                if (sv != null)
+                {
+                    return sv;
+                }
+            }
+            return null;
+        }
+
+        void InitScroller()
+        {
+            svLeft = FindScrollViewer(ListLeft);
+            svRight = FindScrollViewer(ListRight);
+            if (svLeft != null)
+            {
+                svLeft.ScrollChanged += ScrollChanged;
+            }
+            if (svRight != null)
+            {
+                svRight.ScrollChanged += ScrollChanged;
+            }
+        }
+
+        void InitData()
+        {
             ListLeft.Items.Clear();
             ListRight.Items.Clear();
+            if(LeftRowDict != null)
+            {
+                LeftRowDict.Clear();
+                RightRowDict.Clear();
+            }
+            LeftItemDict = new Dictionary<string, ItemData>();
+            RightItemDict = new Dictionary<string, ItemData>();
+        }
+
+        void ScrollChanged(object sender, ScrollChangedEventArgs e)
+        {
+            if (!bSyncingSv)
+            {
+                var source = (ScrollViewer)sender;
+                var target = source == svLeft ? svRight : svLeft;
+                try
+                {
+                    bSyncingSv = true;
+                    target.ScrollToVerticalOffset(e.VerticalOffset);
+                    target.ScrollToHorizontalOffset(e.HorizontalOffset);
+                }
+                finally
+                {
+                    bSyncingSv = false;
+                }
+            }
+        }
+
+        void UpdateList()
+        {
+            //清空之前数据
+            InitScroller();
+            InitData();
             //读表
-            LeftBook = new XLWorkbook("C:\\SG_CIV2\\trunk\\CivGame\\Table\\Base\\C创角配置.xlsx");
-            RightBook = new XLWorkbook("C:\\SG_CIV2\\branches\\CBT2\\Table\\Base\\C创角配置.xlsx");
-            IXLWorksheet LeftSheet = LeftBook.Worksheet(1);
-            IXLWorksheet RightSheet = RightBook.Worksheet(1);
+            LeftSheet = LeftBook.Worksheet(SheetId);
+            RightSheet = RightBook.Worksheet(SheetId);
 
             IEnumerable<IXLRow> LeftRows = LeftSheet.RowsUsed().Where(r => !r.IsEmpty());
             IEnumerable<IXLRow> RightRows = RightSheet.RowsUsed().Where(r => !r.IsEmpty());
 
-            Dictionary<string, IXLRow> LeftDict = RowsToDict(LeftRows);
-            Dictionary<string, IXLRow> RightDict = RowsToDict(RightRows);
+            LeftRowDict = RowUtils.RowsToDict(LeftRows);
+            RightRowDict = RowUtils.RowsToDict(RightRows);
 
-            //缺的整行
-            Dictionary<string, IXLRow> LeftDiffRight = LeftDict.Keys.Except(RightDict.Keys).ToDictionary(k => k, k => LeftDict[k]);
-            Dictionary<string, IXLRow> RightDiffLeft = RightDict.Keys.Except(LeftDict.Keys).ToDictionary(k => k, k => RightDict[k]);
-            //并集逐个比较
-            IEnumerable<string> CommonKeys = LeftDict.Keys.Intersect(RightDict.Keys);
-            foreach (string key in CommonKeys) //遍历所有key
+            IEnumerable<string> allKeys = LeftRowDict.Keys.Union(RightRowDict.Keys);
+            foreach (string key in allKeys)
             {
-                IXLRow lRow = LeftDict[key];
-                IXLRow rRow = RightDict[key];
-                int lCount = lRow.CellsUsed().Count();
-                int rCount = rRow.CellsUsed().Count();
+                SafeRow lRow = new SafeRow(LeftRowDict, key);
+                SafeRow rRow = new SafeRow(RightRowDict, key);
+                int lCount = lRow.GetCount();
+                int rCount = rRow.GetCount();
                 int Count = Math.Max(lCount, rCount);
                 //遍历行
-                var LeftText = new TextBlock();
-                var RightText = new TextBlock();
+                ItemData LeftItem = new ItemData(key);
+                ItemData RightItem = new ItemData(key);
+                LeftItemDict[key] = LeftItem;
+                RightItemDict[key] = RightItem;
                 for (int i = 1; i <= Count; i++)
                 {
-                    string lValue = lRow.Cell(i).GetString();
-                    string rValue = rRow.Cell(i).GetString();
-                    var LeftRun = new Run("|" + lValue + "\t");
-                    var RightRun = new Run("|" + rValue + "\t");
+                    string lValue = lRow.GetValue(i);
+                    string rValue = rRow.GetValue(i);
+                    var lRun = new Run("|" + lValue + "\t");
+                    var rRun = new Run("|" + rValue + "\t");
                     if (!string.Equals(lValue, rValue, StringComparison.Ordinal))
                     {
                         //不一样
-                        LeftRun.Foreground = Brushes.Red;
-                        RightRun.Foreground = Brushes.Red;
-                        LeftText.Inlines.Add(LeftRun);
-                        RightText.Inlines.Add(RightRun);
+                        lRun.Foreground = Brushes.Red;
+                        rRun.Foreground = Brushes.Red;
+                        LeftItem.Inlines.Add(lRun);
+                        RightItem.Inlines.Add(rRun);
                     }
                     else
                     {
                         //一样
-                        LeftRun.Foreground = Brushes.Black;
-                        RightRun.Foreground = Brushes.Black;
-                        LeftText.Inlines.Add(LeftRun);
-                        RightText.Inlines.Add(RightRun);
+                        lRun.Foreground = Brushes.Black;
+                        rRun.Foreground = Brushes.Black;
+                        LeftItem.Inlines.Add(lRun);
+                        RightItem.Inlines.Add(rRun);
                     }
                 }
-                ListLeft.Items.Add(LeftText);
-                ListRight.Items.Add(RightText);
+                ListLeft.Items.Add(LeftItem);
+                ListRight.Items.Add(RightItem);
             }
         }
 
-        private void ListLeft_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void Show_Click(object sender, RoutedEventArgs e)
         {
-            var lb = (ListBox)sender;
-            var item = lb.SelectedItem;
-            var a = 1;
+            LeftBook = new XLWorkbook(TextLeft.Text);
+            RightBook = new XLWorkbook(TextRight.Text);
+            UpdateList();
         }
 
-        private void ListRight_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        ItemData GetItemFromDict(ItemData sourceItem, Dictionary<string, ItemData> ItemDict)
         {
-            var lb = (ListBox)sender;
+            return ItemDict[sourceItem.GetKey()];
         }
+
+        IXLRow GetRowFromDict(ItemData sourceItem, Dictionary<string, IXLRow> RowDict)
+        {
+            return RowDict[sourceItem.GetKey()];
+        }
+
+        private void List_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (!bSyncingSv)
+            {
+                var sourceList = (ListBox)sender;
+                bool bLeft = sourceList == ListLeft;
+                ListBox targetList = bLeft ? ListRight : ListLeft;
+                Dictionary<string, ItemData> targetItemDict = bLeft ? RightItemDict : LeftItemDict;
+                try
+                {
+                    bSyncingSv = true;
+                    if (e.AddedItems.Count > 0)
+                    {
+                        //添加
+                        var sourceItem = (ItemData)e.AddedItems[0];
+                        var targetItem = GetItemFromDict(sourceItem, targetItemDict);
+                        targetList.SelectedItems.Add(targetItem);
+                    }
+                    else
+                    {
+                        //删除
+                        var sourceItem = (ItemData)e.RemovedItems[0];
+                        var targetItem = GetItemFromDict(sourceItem, targetItemDict);
+                        targetList.SelectedItems.Remove(targetItem);
+                    }
+                }
+                finally
+                {
+                    bSyncingSv = false;
+                }
+            }
+        }
+
+        void SyncData(System.Collections.IList sourceItems, bool bLeft)
+        {
+            Dictionary<string, IXLRow> sourceRowDict = bLeft ? LeftRowDict : RightRowDict;
+            Dictionary<string, IXLRow> targetRowDict = bLeft ? RightRowDict : LeftRowDict;
+            IXLWorksheet TargetSheet = bLeft ? RightSheet : LeftSheet;
+            //把source的ItemDatas转成Rows
+            foreach (ItemData i in sourceItems)
+            {
+                var key = i.GetKey();
+                IXLRow sourceRow = sourceRowDict[key]; //source的ItemData转成Row
+                IXLRow targetRow;
+                targetRowDict.TryGetValue(key, out targetRow);
+                int Sub = sourceRow.RowNumber();
+                if (targetRow == null)
+                {
+                    TargetSheet.Row(Sub).InsertRowsAbove(1);
+                    targetRow = TargetSheet.Row(Sub);
+                }
+                RowUtils.CopyRow(sourceRow, targetRow);
+            }
+            UpdateList();
+        }
+
+        private void List_Sync(ListBox sender)
+        {
+            bool bLeft = sender == ListLeft;
+            var sourceItems = sender.SelectedItems;
+            SyncData(sourceItems, bLeft);
+        }
+
+        private void LeftToRight(object sender, RoutedEventArgs e)
+        {
+            List_Sync(ListLeft);
+        }
+
+        private void RightToLeft(object sender, RoutedEventArgs e)
+        {
+            List_Sync(ListRight);
+        }    
     }
 }

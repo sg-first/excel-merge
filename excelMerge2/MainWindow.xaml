@@ -7,13 +7,14 @@
         mc:Ignorable="d"
         Title="MainWindow" Height="450" Width="800">
     <Grid>
-        <ListBox Name="ListLeft" SelectionChanged="ListLeft_SelectionChanged" SelectionMode="Multiple" HorizontalAlignment="Left" Height="350" Margin="24,36,0,0" VerticalAlignment="Top" Width="358"/>
-        <ListBox Name="ListRight" SelectionChanged="ListRight_SelectionChanged" SelectionMode="Multiple" HorizontalAlignment="Left" Height="350" Margin="409,36,0,0" VerticalAlignment="Top" Width="366"/>
-        <TextBox HorizontalAlignment="Left" Height="23" Margin="24,8,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="120"/>
-        <TextBox HorizontalAlignment="Left" Height="23" Margin="230,8,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="120"/>
-        <Button Content="show" HorizontalAlignment="Left" Margin="409,10,0,0" VerticalAlignment="Top" Width="75" Click="Show_Click"/>
-        <Button Content="→" HorizontalAlignment="Left" Margin="62,393,0,0" VerticalAlignment="Top" Width="75"/>
-        <Button Content="←" HorizontalAlignment="Left" Margin="275,393,0,0" VerticalAlignment="Top" Width="75"/>
+        <ListBox Name="ListLeft" SelectionChanged="List_SelectionChanged" SelectionMode="Multiple" HorizontalAlignment="Left" Height="350" Margin="24,36,0,0" VerticalAlignment="Top" Width="358"/>
+        <ListBox Name="ListRight" SelectionChanged="List_SelectionChanged" SelectionMode="Multiple" HorizontalAlignment="Left" Height="350" Margin="409,36,0,0" VerticalAlignment="Top" Width="366"/>
+        <TextBox Name="TextLeft"  HorizontalAlignment="Left" Height="23" Margin="24,8,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="180
+                 " Text="C:\SG_CIV2\trunk\CivGame\Table\Base\D地图_怪物.xlsx"/>
+        <TextBox Name="TextRight" HorizontalAlignment="Left" Height="23" Margin="227,7,0,0" TextWrapping="Wrap" Text="C:\SG_CIV2\branches\CBT2\Table\Base\D地图_怪物.xlsx" VerticalAlignment="Top" Width="180"/>
+        <Button Content="show" HorizontalAlignment="Left" Margin="596,10,0,0" VerticalAlignment="Top" Width="75" Click="Show_Click"/>
+        <Button Content="→" HorizontalAlignment="Left" Margin="170,393,0,0" VerticalAlignment="Top" Width="75" Click="LeftToRight"/>
+        <Button Content="←" HorizontalAlignment="Left" Margin="572,393,0,0" VerticalAlignment="Top" Width="75" Click="RightToLeft"/>
 
     </Grid>
 </Window>
