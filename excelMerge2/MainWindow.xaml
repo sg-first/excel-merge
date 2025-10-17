@@ -1,0 +1,19 @@
+﻿<Window x:Class="excelMerge2.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:excelMerge2"
+        mc:Ignorable="d"
+        Title="MainWindow" Height="450" Width="800">
+    <Grid>
+        <ListBox Name="ListLeft" SelectionChanged="ListLeft_SelectionChanged" SelectionMode="Multiple" HorizontalAlignment="Left" Height="350" Margin="24,36,0,0" VerticalAlignment="Top" Width="358"/>
+        <ListBox Name="ListRight" SelectionChanged="ListRight_SelectionChanged" SelectionMode="Multiple" HorizontalAlignment="Left" Height="350" Margin="409,36,0,0" VerticalAlignment="Top" Width="366"/>
+        <TextBox HorizontalAlignment="Left" Height="23" Margin="24,8,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="120"/>
+        <TextBox HorizontalAlignment="Left" Height="23" Margin="230,8,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="120"/>
+        <Button Content="show" HorizontalAlignment="Left" Margin="409,10,0,0" VerticalAlignment="Top" Width="75" Click="Show_Click"/>
+        <Button Content="→" HorizontalAlignment="Left" Margin="62,393,0,0" VerticalAlignment="Top" Width="75"/>
+        <Button Content="←" HorizontalAlignment="Left" Margin="275,393,0,0" VerticalAlignment="Top" Width="75"/>
+
+    </Grid>
+</Window>
