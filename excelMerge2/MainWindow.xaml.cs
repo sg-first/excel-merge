@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.IO;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -228,6 +229,7 @@ namespace excelMerge2
             UpdateList();
         }
 
+        //select
         ItemData GetItemFromDict(ItemData sourceItem, Dictionary<string, ItemData> ItemDict)
         {
             return ItemDict[sourceItem.GetKey()];
@@ -271,6 +273,7 @@ namespace excelMerge2
             }
         }
 
+        //merge
         void SyncData(System.Collections.IList sourceItems, bool bLeft)
         {
             Dictionary<string, IXLRow> sourceRowDict = bLeft ? LeftRowDict : RightRowDict;
@@ -309,6 +312,42 @@ namespace excelMerge2
         private void RightToLeft(object sender, RoutedEventArgs e)
         {
             List_Sync(ListRight);
-        }    
+        }
+
+        //drop
+        private void FilePathTextBox_PreviewDragOver(object sender, DragEventArgs e)
+        {
+            if (e.Data.GetDataPresent(DataFormats.FileDrop))
+            {
+                e.Effects = DragDropEffects.Copy;
+            }
+            else
+            {
+                e.Effects = DragDropEffects.None;
+            }
+            e.Handled = true;
+        }
+
+        private void FilePathTextBox_Drop(object sender, DragEventArgs e)
+        {
+            if (e.Data.GetDataPresent(DataFormats.FileDrop))
+            {
+                var paths = ((string[])e.Data.GetData(DataFormats.FileDrop))
+                                .Where(p => File.Exists(p) && p.Contains("xls")) //只要表格文件
+                                .ToArray();
+                if(paths.Length > 0)
+                {
+                    var tb = (TextBox)sender;
+                    tb.Text = paths[0];
+                }
+                e.Handled = true;
+            }
+        }
+
+        private void Save_Click(object sender, RoutedEventArgs e)
+        {
+            LeftBook.Save();
+            RightBook.Save();
+        }
     }
 }
