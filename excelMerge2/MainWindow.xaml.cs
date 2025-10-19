@@ -99,7 +99,7 @@ namespace excelMerge2
         IXLWorksheet LeftSheet, RightSheet;
         Dictionary<string, IXLRow> LeftRowDict, RightRowDict;
         Dictionary<string, ItemData> LeftItemDict, RightItemDict;
-        int SheetId = 1;
+        int LeftSheetId = 1, RightSheetId = 1;
 
         ScrollViewer svLeft, svRight;
         bool bSyncingSv = false;
@@ -139,6 +139,7 @@ namespace excelMerge2
         {
             ListLeft.Items.Clear();
             ListRight.Items.Clear();
+            ListSheet.Items.Clear();
             if(LeftRowDict != null)
             {
                 LeftRowDict.Clear();
@@ -146,6 +147,39 @@ namespace excelMerge2
             }
             LeftItemDict = new Dictionary<string, ItemData>();
             RightItemDict = new Dictionary<string, ItemData>();
+        }
+
+        void InitSheets()
+        {
+            bool bIntersectionIsLeft = LeftBook.Worksheets.Count < RightBook.Worksheets.Count;
+            XLWorkbook IntersectionBook = bIntersectionIsLeft ? LeftBook : RightBook;
+            XLWorkbook OtherBook = bIntersectionIsLeft ? RightBook : LeftBook;
+            //如果要改成union需要处理merge时逻辑：sheet找不到时建表
+            int IntersectionSheetId = 1;
+            foreach (IXLWorksheet sheet in IntersectionBook.Worksheets)
+            {
+                TextBlock tb = new TextBlock();
+                var r = new Run(sheet.Name);
+                //判断两个sheet是否相同
+                int OtherSheetId = GetSheetSub(OtherBook, sheet.Name);
+                int LeftSheetId, RightSheetId;
+                if (bIntersectionIsLeft)
+                {
+                    LeftSheetId = IntersectionSheetId;
+                    RightSheetId = OtherSheetId;
+                }
+                else
+                {
+                    LeftSheetId = OtherSheetId;
+                    RightSheetId = IntersectionSheetId;
+                }
+                bool bDiff = IsDiffSheet(LeftSheetId, RightSheetId); //看是否相同
+                //设置item UI
+                r.Foreground = bDiff ? Brushes.Red : Brushes.Black;
+                tb.Inlines.Add(r);
+                ListSheet.Items.Add(tb);
+                IntersectionSheetId++;
+            }
         }
 
         void ScrollChanged(object sender, ScrollChangedEventArgs e)
@@ -167,14 +201,29 @@ namespace excelMerge2
             }
         }
 
-        void UpdateList()
+        void UpdateList(bool bFirst = false)
         {
             //清空之前数据
             InitScroller();
             InitData();
-            //读表
-            LeftSheet = LeftBook.Worksheet(SheetId);
-            RightSheet = RightBook.Worksheet(SheetId);
+            if(bFirst)
+            {
+                LeftSheetId = 1;
+                RightSheetId = 1;
+                InitSheets();
+            }
+            UpdateListBySheet(LeftSheetId, RightSheetId); //读表
+        }
+
+        bool IsDiffSheet(int InLeftSheetId, int InRightSheetId)
+        { 
+            return UpdateListBySheet(InLeftSheetId, InRightSheetId, true);
+        }
+
+        bool UpdateListBySheet(int InLeftSheetId, int InRightSheetId, bool bReturnWhenFound = false) //bReturnWhenFound为true时只返回有无差异，不做表现
+        {
+            LeftSheet = LeftBook.Worksheet(InLeftSheetIdheetId);
+            RightSheet = RightBook.Worksheet(InRightSheetId);
 
             IEnumerable<IXLRow> LeftRows = LeftSheet.RowsUsed().Where(r => !r.IsEmpty());
             IEnumerable<IXLRow> RightRows = RightSheet.RowsUsed().Where(r => !r.IsEmpty());
@@ -183,6 +232,7 @@ namespace excelMerge2
             RightRowDict = RowUtils.RowsToDict(RightRows);
 
             IEnumerable<string> allKeys = LeftRowDict.Keys.Union(RightRowDict.Keys);
+            bool bHasDiff = false;
             foreach (string key in allKeys)
             {
                 SafeRow lRow = new SafeRow(LeftRowDict, key);
@@ -208,6 +258,15 @@ namespace excelMerge2
                         rRun.Foreground = Brushes.Red;
                         LeftItem.Inlines.Add(lRun);
                         RightItem.Inlines.Add(rRun);
+
+                        if(bReturnWhenFound)
+                        {
+                            return true; //找到了不一样的直接返回不一样
+                        }
+                        else
+                        {
+                            bHasDiff = true;
+                        }
                     }
                     else
                     {
@@ -218,8 +277,13 @@ namespace excelMerge2
                         RightItem.Inlines.Add(rRun);
                     }
                 }
-                ListLeft.Items.Add(LeftItem);
-                ListRight.Items.Add(RightItem);
+
+                if(!bReturnWhenFound)
+                {
+                    ListLeft.Items.Add(LeftItem);
+                    ListRight.Items.Add(RightItem);
+                }
+                return bHasDiff;
             }
         }
 
@@ -229,7 +293,7 @@ namespace excelMerge2
             RightPath = TextRight.Text;
             LeftBook = new XLWorkbook(LeftPath);
             RightBook = new XLWorkbook(RightPath);
-            UpdateList();
+            UpdateList(true);
         }
 
         //select
@@ -347,6 +411,7 @@ namespace excelMerge2
             }
         }
 
+        //save
         void CancelReadOnlyAndSave(XLWorkbook Book, string Path)
         {
             var attrs = File.GetAttributes(Path);
@@ -364,9 +429,28 @@ namespace excelMerge2
             CancelReadOnlyAndSave(RightBook, RightPath);
         }
 
+        //sheet
+        static public void GetSheetSub(XLWorkbook book, string name)
+        {
+            int i = 1;
+            foreach (IXLWorksheet sheet in book.Worksheets)
+            {
+                if(sheet.Name == name)
+                {
+                    return i;
+                }
+                i++;
+            }
+            return -1
+        }
+
         private void Sheet_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-
+            var SheetList = (ListBox)sender;
+            string SheetName = (string)SheetList.SelectedItem;
+            LeftSheetId = GetSheetSub(LeftBook, SheetName);
+            RightSheetId = GetSheetSub(RightBook, SheetName);
+            UpdateList();
         }
     }
 }
