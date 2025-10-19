@@ -363,5 +363,10 @@ namespace excelMerge2
             CancelReadOnlyAndSave(LeftBook, LeftPath);
             CancelReadOnlyAndSave(RightBook, RightPath);
         }
+
+        private void Sheet_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+
+        }
     }
 }
