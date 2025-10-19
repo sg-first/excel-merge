@@ -94,6 +94,7 @@ namespace excelMerge2
             InitializeComponent();
         }
 
+        string LeftPath, RightPath;
         XLWorkbook LeftBook,RightBook;
         IXLWorksheet LeftSheet, RightSheet;
         Dictionary<string, IXLRow> LeftRowDict, RightRowDict;
@@ -224,8 +225,10 @@ namespace excelMerge2
 
         private void Show_Click(object sender, RoutedEventArgs e)
         {
-            LeftBook = new XLWorkbook(TextLeft.Text);
-            RightBook = new XLWorkbook(TextRight.Text);
+            LeftPath = TextLeft.Text;
+            RightPath = TextRight.Text;
+            LeftBook = new XLWorkbook(LeftPath);
+            RightBook = new XLWorkbook(RightPath);
             UpdateList();
         }
 
@@ -344,10 +347,21 @@ namespace excelMerge2
             }
         }
 
+        void CancelReadOnlyAndSave(XLWorkbook Book, string Path)
+        {
+            var attrs = File.GetAttributes(Path);
+            if ((attrs & FileAttributes.ReadOnly) != 0)
+            {
+                // 清除只读位
+                File.SetAttributes(Path, attrs & ~FileAttributes.ReadOnly);
+            }
+            Book.Save();
+        }
+
         private void Save_Click(object sender, RoutedEventArgs e)
         {
-            LeftBook.Save();
-            RightBook.Save();
+            CancelReadOnlyAndSave(LeftBook, LeftPath);
+            CancelReadOnlyAndSave(RightBook, RightPath);
         }
     }
 }
