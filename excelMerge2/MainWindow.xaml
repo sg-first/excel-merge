@@ -18,7 +18,7 @@
         <Button Content="→" HorizontalAlignment="Left" Margin="170,393,0,0" VerticalAlignment="Top" Width="75" Click="LeftToRight"/>
         <Button Content="←" HorizontalAlignment="Left" Margin="572,393,0,0" VerticalAlignment="Top" Width="75" Click="RightToLeft"/>
         <Button Content="Save" HorizontalAlignment="Left" Margin="808,10,0,0" VerticalAlignment="Top" Width="75" Click="Save_Click"/>
-        <ListBox HorizontalAlignment="Left" Height="350" Margin="783,36,0,0" VerticalAlignment="Top" Width="100"/>
+        <ListBox Name="ListSheet" SelectionChanged="Sheet_SelectionChanged" HorizontalAlignment="Left" Height="350" Margin="783,36,0,0" VerticalAlignment="Top" Width="100"/>
 
     </Grid>
 </Window>

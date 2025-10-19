@@ -139,7 +139,6 @@ namespace excelMerge2
         {
             ListLeft.Items.Clear();
             ListRight.Items.Clear();
-            ListSheet.Items.Clear();
             if(LeftRowDict != null)
             {
                 LeftRowDict.Clear();
@@ -208,6 +207,7 @@ namespace excelMerge2
             InitData();
             if(bFirst)
             {
+                ListSheet.Items.Clear();
                 LeftSheetId = 1;
                 RightSheetId = 1;
                 InitSheets();
@@ -222,7 +222,7 @@ namespace excelMerge2
 
         bool UpdateListBySheet(int InLeftSheetId, int InRightSheetId, bool bReturnWhenFound = false) //bReturnWhenFound为true时只返回有无差异，不做表现
         {
-            LeftSheet = LeftBook.Worksheet(InLeftSheetIdheetId);
+            LeftSheet = LeftBook.Worksheet(InLeftSheetId);
             RightSheet = RightBook.Worksheet(InRightSheetId);
 
             IEnumerable<IXLRow> LeftRows = LeftSheet.RowsUsed().Where(r => !r.IsEmpty());
@@ -283,8 +283,8 @@ namespace excelMerge2
                     ListLeft.Items.Add(LeftItem);
                     ListRight.Items.Add(RightItem);
                 }
-                return bHasDiff;
             }
+            return bHasDiff;
         }
 
         private void Show_Click(object sender, RoutedEventArgs e)
@@ -430,7 +430,7 @@ namespace excelMerge2
         }
 
         //sheet
-        static public void GetSheetSub(XLWorkbook book, string name)
+        static public int GetSheetSub(XLWorkbook book, string name)
         {
             int i = 1;
             foreach (IXLWorksheet sheet in book.Worksheets)
@@ -441,16 +441,26 @@ namespace excelMerge2
                 }
                 i++;
             }
-            return -1
+            return -1;
         }
 
         private void Sheet_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             var SheetList = (ListBox)sender;
-            string SheetName = (string)SheetList.SelectedItem;
-            LeftSheetId = GetSheetSub(LeftBook, SheetName);
-            RightSheetId = GetSheetSub(RightBook, SheetName);
-            UpdateList();
+            TextBlock tb = (TextBlock)SheetList.SelectedItem;
+            if(tb != null)
+            {
+                var r = (Run)tb.Inlines.FirstInline;
+                string Text = r.Text;
+                int NewLeftSheetId = GetSheetSub(LeftBook, Text);
+                int NewRightSheetId = GetSheetSub(RightBook, Text);
+                if (LeftSheetId != NewLeftSheetId || RightSheetId != NewRightSheetId)
+                {
+                    LeftSheetId = NewLeftSheetId;
+                    RightSheetId = NewRightSheetId;
+                    UpdateList();
+                }
+            }
         }
     }
 }
