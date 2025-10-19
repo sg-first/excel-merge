@@ -61,7 +61,8 @@ namespace excelMerge2
                 var Cell = Data.Cell(i);
                 try
                 {
-                    return Cell.GetString();
+                    //return Cell.GetString();
+                    return Cell.CachedValue.ToString();
                 }
                 catch (NotImplementedException)
                 {
@@ -356,6 +357,12 @@ namespace excelMerge2
                 int Sub = sourceRow.RowNumber();
                 if (targetRow == null)
                 {
+                    //之前没有这个主键，需要新增行
+                    int targetAppendSub = TargetSheet.RowsUsed().Count() + 1;
+                    if (Sub > targetAppendSub) //如果下标很大就加在target末尾
+                    {
+                        Sub = targetAppendSub;
+                    }
                     TargetSheet.Row(Sub).InsertRowsAbove(1);
                     targetRow = TargetSheet.Row(Sub);
                 }

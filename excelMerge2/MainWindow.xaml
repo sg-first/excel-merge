@@ -14,10 +14,10 @@
         <TextBox Name="TextRight" HorizontalAlignment="Left" Height="23" Margin="365,7,0,0" TextWrapping="Wrap" 
                  Text="C:\SG_CIV2\branches\CBT2\Table\Base\D地图_怪物.xlsx" VerticalAlignment="Top" Width="350"
                  AllowDrop="True" PreviewDragOver="FilePathTextBox_PreviewDragOver" Drop="FilePathTextBox_Drop"/>
-        <Button Content="show" HorizontalAlignment="Left" Margin="728,10,0,0" VerticalAlignment="Top" Width="75" Click="Show_Click"/>
+        <Button Content="load" HorizontalAlignment="Left" Margin="728,10,0,0" VerticalAlignment="Top" Width="75" Click="Show_Click"/>
         <Button Content="→" HorizontalAlignment="Left" Margin="170,393,0,0" VerticalAlignment="Top" Width="75" Click="LeftToRight"/>
         <Button Content="←" HorizontalAlignment="Left" Margin="572,393,0,0" VerticalAlignment="Top" Width="75" Click="RightToLeft"/>
-        <Button Content="Save" HorizontalAlignment="Left" Margin="808,10,0,0" VerticalAlignment="Top" Width="75" Click="Save_Click"/>
+        <Button Content="save" HorizontalAlignment="Left" Margin="808,10,0,0" VerticalAlignment="Top" Width="75" Click="Save_Click"/>
         <ListBox Name="ListSheet" SelectionChanged="Sheet_SelectionChanged" HorizontalAlignment="Left" Height="350" Margin="783,36,0,0" VerticalAlignment="Top" Width="100"/>
 
     </Grid>
