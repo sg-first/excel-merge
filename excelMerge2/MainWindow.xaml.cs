@@ -92,6 +92,11 @@ namespace excelMerge2
     {
         public MainWindow()
         {
+            AppDomain.CurrentDomain.UnhandledException += (s, e) =>
+            {
+                MessageBox.Show(e.ExceptionObject.ToString(), "Fatal");
+                Environment.Exit(1);
+            };
             InitializeComponent();
         }
 
@@ -290,6 +295,7 @@ namespace excelMerge2
 
         private void Show_Click(object sender, RoutedEventArgs e)
         {
+            string[] CommandArgs = Environment.GetCommandLineArgs();
             LeftPath = TextLeft.Text;
             RightPath = TextRight.Text;
             LeftBook = new XLWorkbook(LeftPath);
