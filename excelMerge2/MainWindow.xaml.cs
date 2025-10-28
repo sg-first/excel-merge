@@ -258,7 +258,7 @@ namespace excelMerge2
         {
             bool bOnlyShowDiff = IsShowOnlyDiff();
             IEnumerable<string> allKeys = LeftRowDict.Keys.Union(RightRowDict.Keys);
-            bool bHasDiff = false;
+            int DiffNum = 0;
             foreach (string key in allKeys)
             {
                 SafeRow lRow = new SafeRow(LeftRowDict, key);
@@ -292,7 +292,7 @@ namespace excelMerge2
                         }
                         else
                         {
-                            bHasDiff = true;
+                            DiffNum++;
                             bRowHasDiff = true;
                         }
                     }
@@ -315,7 +315,9 @@ namespace excelMerge2
                     }
                 }
             }
-            return bHasDiff;
+
+            LabelDiffNum.Content = DiffNum;
+            return DiffNum > 0;
         }
 
         private void Show_Click(object sender, RoutedEventArgs e)

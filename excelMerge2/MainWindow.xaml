@@ -64,6 +64,7 @@
 
         <StackPanel Grid.Row="2" Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="4,4.333,0,3.667">
             <CheckBox Content="仅显示差异" Name="CheckBoxOnlyDiff" HorizontalAlignment="Left" Margin="4,0" IsChecked="True" Click="CheckBox_Click"/>
+            <Label Content="0" Name="LabelDiffNum" HorizontalAlignment="Left" Margin="5,0" Padding="0" VerticalAlignment="Center" VerticalContentAlignment="Center"/>
         </StackPanel>
         
     </Grid>
