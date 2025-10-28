@@ -48,7 +48,7 @@ namespace excelMerge2
 
         static public void CopyRow(IXLRow sourceRow, IXLRow targetRow)
         {
-            int sourceCount = sourceRow.CellsUsed().Count();
+            int sourceCount = SafeRow.GetCount(sourceRow);
             for (int i = 1; i <= sourceCount; i++)
             {
                 string sourceValue = sourceRow.Cell(i).GetString();
@@ -94,8 +94,8 @@ namespace excelMerge2
                 var Cell = Data.Cell(i);
                 try
                 {
-                    //return Cell.GetString();
-                    return Cell.CachedValue.ToString();
+                    return Cell.GetString();
+                    //return Cell.CachedValue.ToString();
                 }
                 catch (NotImplementedException)
                 {
@@ -108,16 +108,21 @@ namespace excelMerge2
             }
         }
 
-        public int GetCount()
+        public static int GetCount(IXLRow InData)
         {
-            if(Data != null)
+            if (InData != null)
             {
-                return Data.LastCellUsed().Address.ColumnNumber;
+                return InData.LastCellUsed().Address.ColumnNumber;
             }
             else
             {
                 return 0;
             }
+        }
+
+        public int GetCount()
+        {
+            return GetCount(Data);
         }
     }
 
@@ -397,15 +402,15 @@ namespace excelMerge2
                     if (e.AddedItems.Count > 0)
                     {
                         //添加
-                        var sourceItem = (ItemData)e.AddedItems[0];
-                        var targetItem = GetItemFromDict(sourceItem, targetItemDict);
+                        ItemData sourceItem = (ItemData)e.AddedItems[0];
+                        ItemData targetItem = GetItemFromDict(sourceItem, targetItemDict);
                         targetList.SelectedItems.Add(targetItem);
                     }
                     else
                     {
                         //删除
-                        var sourceItem = (ItemData)e.RemovedItems[0];
-                        var targetItem = GetItemFromDict(sourceItem, targetItemDict);
+                        ItemData sourceItem = (ItemData)e.RemovedItems[0];
+                        ItemData targetItem = GetItemFromDict(sourceItem, targetItemDict);
                         targetList.SelectedItems.Remove(targetItem);
                     }
                 }
@@ -517,7 +522,7 @@ namespace excelMerge2
             }
         }
 
-        //sheet
+        //多sheet选择
         static public int GetSheetSub(XLWorkbook book, string name)
         {
             int i = 1;
