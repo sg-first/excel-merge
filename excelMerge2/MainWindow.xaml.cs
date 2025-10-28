@@ -112,7 +112,7 @@ namespace excelMerge2
         {
             if(Data != null)
             {
-                return Data.CellsUsed().Count();
+                return Data.LastCellUsed().Address.ColumnNumber;
             }
             else
             {
@@ -140,6 +140,13 @@ namespace excelMerge2
                 TextRight.Text = CommandArgs[2];
                 Show_Click(null, null);
             }
+            else if(CommandArgs.Length == 5)
+            {
+                TextLeft.Text = CommandArgs[2];
+                TextRight.Text = CommandArgs[3];
+                SaveAsPath = CommandArgs[4];
+                Show_Click(null, null);
+            }
         }
 
         string LeftPath, RightPath;
@@ -148,6 +155,7 @@ namespace excelMerge2
         Dictionary<string, IXLRow> LeftRowDict, RightRowDict;
         Dictionary<string, ItemData> LeftItemDict, RightItemDict;
         int LeftSheetId = 1, RightSheetId = 1;
+        string SaveAsPath = null;
 
         ScrollViewer svLeft, svRight;
         bool bSyncingSv = false;
@@ -498,8 +506,15 @@ namespace excelMerge2
 
         private void Save_Click(object sender, RoutedEventArgs e)
         {
-            CancelReadOnlyAndSave(LeftBook, LeftPath);
-            CancelReadOnlyAndSave(RightBook, RightPath);
+            if (SaveAsPath == null)
+            {
+                //CancelReadOnlyAndSave(LeftBook, LeftPath);
+                CancelReadOnlyAndSave(RightBook, RightPath);
+            }
+            else
+            {
+                RightBook.SaveAs(SaveAsPath);
+            }
         }
 
         //sheet
