@@ -6,19 +6,60 @@
         xmlns:local="clr-namespace:excelMerge2"
         mc:Ignorable="d"
         Title="MainWindow" Height="450" Width="900">
-    <Grid>
-        <ListBox Name="ListLeft" SelectionChanged="List_SelectionChanged" SelectionMode="Multiple" HorizontalAlignment="Left" Height="350" Margin="24,36,0,0" VerticalAlignment="Top" Width="358"/>
-        <ListBox Name="ListRight" SelectionChanged="List_SelectionChanged" SelectionMode="Multiple" HorizontalAlignment="Left" Height="350" Margin="409,36,0,0" VerticalAlignment="Top" Width="366"/>
-        <TextBox Name="TextLeft"  HorizontalAlignment="Left" Height="23" Margin="10,7,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="350" Text="C:\SG_CIV2\trunk\CivGame\Table\Base\D地图_怪物.xlsx"
-                 AllowDrop="True" PreviewDragOver="FilePathTextBox_PreviewDragOver" Drop="FilePathTextBox_Drop"/>
-        <TextBox Name="TextRight" HorizontalAlignment="Left" Height="23" Margin="365,7,0,0" TextWrapping="Wrap" 
-                 Text="C:\SG_CIV2\branches\CBT2\Table\Base\D地图_怪物.xlsx" VerticalAlignment="Top" Width="350"
-                 AllowDrop="True" PreviewDragOver="FilePathTextBox_PreviewDragOver" Drop="FilePathTextBox_Drop"/>
-        <Button Content="load" HorizontalAlignment="Left" Margin="728,10,0,0" VerticalAlignment="Top" Width="75" Click="Show_Click"/>
-        <Button Content="→" HorizontalAlignment="Left" Margin="170,393,0,0" VerticalAlignment="Top" Width="75" Click="LeftToRight"/>
-        <Button Content="←" HorizontalAlignment="Left" Margin="572,393,0,0" VerticalAlignment="Top" Width="75" Click="RightToLeft"/>
-        <Button Content="save" HorizontalAlignment="Left" Margin="808,10,0,0" VerticalAlignment="Top" Width="75" Click="Save_Click"/>
-        <ListBox Name="ListSheet" SelectionChanged="Sheet_SelectionChanged" HorizontalAlignment="Left" Height="350" Margin="783,36,0,0" VerticalAlignment="Top" Width="100"/>
+    <Grid Margin="8">
+        <!-- 列：左列表、按钮列、右列表、右侧 Sheet -->
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="2*"/>
+            <!-- 左侧列表（可伸缩） -->
+            <ColumnDefinition Width="Auto"/>
+            <!-- 中间按钮列（自适应大小）-->
+            <ColumnDefinition Width="2*"/>
+            <!-- 右侧列表（可伸缩） -->
+            <ColumnDefinition Width="180"/>
+            <!-- 右侧固定宽度 sheet（可改为*） -->
+        </Grid.ColumnDefinitions>
 
+        <!-- 行：顶部控件、主区域、底部-->
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- 顶部：两个文件路径 TextBox 和 load/save 按钮 -->
+        <TextBox Grid.Row="0" Grid.Column="0" Name="TextLeft"
+             Margin="4" Height="24"
+             Text="C:\SG_CIV2\trunk\CivGame\Table\Base\D地图_怪物.xlsx"
+             AllowDrop="True" PreviewDragOver="FilePathTextBox_PreviewDragOver" Drop="FilePathTextBox_Drop"/>
+        <TextBox Grid.Row="0" Grid.Column="2" Name="TextRight"
+             Margin="4" Height="24"
+             Text="C:\SG_CIV2\branches\CBT2\Table\Base\D地图_怪物.xlsx"
+             AllowDrop="True" PreviewDragOver="FilePathTextBox_PreviewDragOver" Drop="FilePathTextBox_Drop"/>
+        <StackPanel Grid.Row="0" Grid.Column="3" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="4">
+            <Button Content="load" Width="60" Margin="4,0" Click="Show_Click"/>
+            <Button Content="save" Width="60" Margin="4,0" Click="Save_Click"/>
+        </StackPanel>
+
+        <!-- 主区域：两个 ListBox 和 中间箭头按钮 -->
+        <ListBox Grid.Row="1" Grid.Column="0" Name="ListLeft"
+             SelectionChanged="List_SelectionChanged" SelectionMode="Multiple"
+             Margin="4" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+             MinWidth="120" MinHeight="100"/>
+
+        <!-- 中间竖向按钮 -->
+        <StackPanel Grid.Row="1" Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="4">
+            <Button Content="→" Width="40" Height="30" Margin="0,8" Click="LeftToRight"/>
+            <Button Content="←" Width="40" Height="30" Margin="0,8" Click="RightToLeft"/>
+        </StackPanel>
+
+        <ListBox Grid.Row="1" Grid.Column="2" Name="ListRight"
+             SelectionChanged="List_SelectionChanged" SelectionMode="Multiple"
+             Margin="4" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+             MinWidth="120" MinHeight="100"/>
+
+        <ListBox Grid.Row="1" Grid.Column="3" Name="ListSheet"
+             SelectionChanged="Sheet_SelectionChanged"
+             Margin="4" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+             MinWidth="100" MinHeight="100"/>
     </Grid>
 </Window>

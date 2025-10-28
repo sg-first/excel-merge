@@ -92,12 +92,21 @@ namespace excelMerge2
     {
         public MainWindow()
         {
+            //崩溃时输出原因
             AppDomain.CurrentDomain.UnhandledException += (s, e) =>
             {
                 MessageBox.Show(e.ExceptionObject.ToString(), "Fatal");
                 Environment.Exit(1);
             };
             InitializeComponent();
+            //命令行参数
+            string[] CommandArgs = Environment.GetCommandLineArgs();
+            if (CommandArgs.Length == 3)
+            {
+                TextLeft.Text = CommandArgs[1];
+                TextRight.Text = CommandArgs[2];
+                Show_Click(null, null);
+            }
         }
 
         string LeftPath, RightPath;
@@ -295,7 +304,6 @@ namespace excelMerge2
 
         private void Show_Click(object sender, RoutedEventArgs e)
         {
-            string[] CommandArgs = Environment.GetCommandLineArgs();
             LeftPath = TextLeft.Text;
             RightPath = TextRight.Text;
             LeftBook = new XLWorkbook(LeftPath);
@@ -430,8 +438,7 @@ namespace excelMerge2
             var attrs = File.GetAttributes(Path);
             if ((attrs & FileAttributes.ReadOnly) != 0)
             {
-                // 清除只读位
-                File.SetAttributes(Path, attrs & ~FileAttributes.ReadOnly);
+                File.SetAttributes(Path, attrs & ~FileAttributes.ReadOnly); //清除只读位
             }
             Book.Save();
         }
