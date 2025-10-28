@@ -159,11 +159,14 @@ namespace excelMerge2
                 LeftRowDict.Clear();
                 RightRowDict.Clear();
             }
-            LeftItemDict = new Dictionary<string, ItemData>();
-            RightItemDict = new Dictionary<string, ItemData>();
+            else
+            {
+                LeftItemDict = new Dictionary<string, ItemData>();
+                RightItemDict = new Dictionary<string, ItemData>();
+            }
         }
 
-        void InitSheets()
+        void InitSheetsList()
         {
             bool bIntersectionIsLeft = LeftBook.Worksheets.Count < RightBook.Worksheets.Count;
             XLWorkbook IntersectionBook = bIntersectionIsLeft ? LeftBook : RightBook;
@@ -225,17 +228,19 @@ namespace excelMerge2
                 ListSheet.Items.Clear();
                 LeftSheetId = 1;
                 RightSheetId = 1;
-                InitSheets();
+                InitSheetsList(); //最右边的sheet列表
             }
-            UpdateListBySheet(LeftSheetId, RightSheetId); //读表
+            LoadAndUpdateListBySheet(LeftSheetId, RightSheetId); //读表
         }
 
         bool IsDiffSheet(int InLeftSheetId, int InRightSheetId)
         { 
-            return UpdateListBySheet(InLeftSheetId, InRightSheetId, true);
+            return LoadAndUpdateListBySheet(InLeftSheetId, InRightSheetId, true);
         }
 
-        bool UpdateListBySheet(int InLeftSheetId, int InRightSheetId, bool bReturnWhenFound = false) //bReturnWhenFound为true时只返回有无差异，不做表现
+        //根据sheet内容刷新UI
+        //bReturnWhenFound: true时只返回有无差异，不做表现
+        bool LoadAndUpdateListBySheet(int InLeftSheetId, int InRightSheetId, bool bReturnWhenFound = false)
         {
             LeftSheet = LeftBook.Worksheet(InLeftSheetId);
             RightSheet = RightBook.Worksheet(InRightSheetId);
@@ -246,6 +251,12 @@ namespace excelMerge2
             LeftRowDict = RowUtils.RowsToDict(LeftRows);
             RightRowDict = RowUtils.RowsToDict(RightRows);
 
+            return UpdateListBySheet(bReturnWhenFound);
+        }
+
+        bool UpdateListBySheet(bool bReturnWhenFound = false)
+        {
+            bool bOnlyShowDiff = IsShowOnlyDiff();
             IEnumerable<string> allKeys = LeftRowDict.Keys.Union(RightRowDict.Keys);
             bool bHasDiff = false;
             foreach (string key in allKeys)
@@ -255,7 +266,8 @@ namespace excelMerge2
                 int lCount = lRow.GetCount();
                 int rCount = rRow.GetCount();
                 int Count = Math.Max(lCount, rCount);
-                //遍历行
+                //遍历该行所有字段
+                bool bRowHasDiff = false;
                 ItemData LeftItem = new ItemData(key);
                 ItemData RightItem = new ItemData(key);
                 LeftItemDict[key] = LeftItem;
@@ -274,13 +286,14 @@ namespace excelMerge2
                         LeftItem.Inlines.Add(lRun);
                         RightItem.Inlines.Add(rRun);
 
-                        if(bReturnWhenFound)
+                        if (bReturnWhenFound)
                         {
                             return true; //找到了不一样的直接返回不一样
                         }
                         else
                         {
                             bHasDiff = true;
+                            bRowHasDiff = true;
                         }
                     }
                     else
@@ -293,10 +306,13 @@ namespace excelMerge2
                     }
                 }
 
-                if(!bReturnWhenFound)
+                if (!bReturnWhenFound)
                 {
-                    ListLeft.Items.Add(LeftItem);
-                    ListRight.Items.Add(RightItem);
+                    if (bRowHasDiff || (!bRowHasDiff && !bOnlyShowDiff))
+                    {
+                        ListLeft.Items.Add(LeftItem);
+                        ListRight.Items.Add(RightItem);
+                    }
                 }
             }
             return bHasDiff;
@@ -481,6 +497,28 @@ namespace excelMerge2
                     UpdateList();
                 }
             }
+        }
+
+        //checkBox
+        bool IsShowOnlyDiff()
+        {
+            bool? CheckValue = CheckBoxOnlyDiff.IsChecked;
+            if(CheckValue != null)
+            {
+                return (bool)CheckValue;
+            }
+            else
+            {
+                return true;
+            }
+        }
+
+        private void CheckBox_Click(object sender, RoutedEventArgs e)
+        {
+            //清空UI
+            ListLeft.Items.Clear();
+            ListRight.Items.Clear();
+            UpdateListBySheet(false);
         }
     }
 }

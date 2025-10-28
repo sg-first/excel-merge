@@ -61,5 +61,10 @@
              SelectionChanged="Sheet_SelectionChanged"
              Margin="4" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
              MinWidth="100" MinHeight="100"/>
+
+        <StackPanel Grid.Row="2" Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="4,4.333,0,3.667">
+            <CheckBox Content="仅显示差异" Name="CheckBoxOnlyDiff" HorizontalAlignment="Left" Margin="4,0" IsChecked="True" Click="CheckBox_Click"/>
+        </StackPanel>
+        
     </Grid>
 </Window>
