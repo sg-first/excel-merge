@@ -28,11 +28,20 @@ namespace excelMerge2
         public string GetKey() { return key; }
     }
 
-    public static class RowUtils
+    public class HelperRows
     {
-        static public Dictionary<string, IXLRow> RowsToDict(IEnumerable<IXLRow> Rows)
+        IEnumerable<IXLRow> Rows;
+        List<int> PrimaryKeySubs = new List<int>();
+        public HelperRows(IEnumerable<IXLRow> InRows) 
+        { 
+            Rows = InRows;
+            //PrimaryKeySubs.Add(1);
+            SetPrimaryKeySubs();
+        }
+
+        public Dictionary<string, IXLRow> RowsToDict()
         {
-            return Rows.GroupBy(r => r.Cell(1).GetString()) //第一个格的元素
+            return Rows.GroupBy(r => GetPrimaryKey(r)) //第一个格的元素
                        .Where(g => (!string.IsNullOrEmpty(g.Key))) //上面那个函数返回的是g.Key
                        .ToDictionary(g => g.Key, g => g.First()); //主键为g.Key的第一行是g.First
         }
@@ -45,6 +54,30 @@ namespace excelMerge2
                 string sourceValue = sourceRow.Cell(i).GetString();
                 targetRow.Cell(i).Value = sourceValue;
             }
+        }
+        
+        private void SetPrimaryKeySubs()
+        {
+            PrimaryKeySubs.Clear();
+            IXLCells KeyConfigRow = Rows.ElementAt(3).CellsUsed();
+            for (int i = 0; i < KeyConfigRow.Count(); i++)
+            {
+                string KeyConfig = KeyConfigRow.ElementAt(i).GetString();
+                if (KeyConfig == "PrimaryKey")
+                {
+                    PrimaryKeySubs.Add(i + 1); //取的时候是通过IXLRow.Cell(i)取的，从1开始
+                }
+            }
+        }
+
+        public string GetPrimaryKey(IXLRow r)
+        {
+            string ret = "";
+            foreach(int i in PrimaryKeySubs)
+            {
+                ret += r.Cell(i).GetString();
+            }
+            return ret;
         }
     }
 
@@ -248,8 +281,10 @@ namespace excelMerge2
             IEnumerable<IXLRow> LeftRows = LeftSheet.RowsUsed().Where(r => !r.IsEmpty());
             IEnumerable<IXLRow> RightRows = RightSheet.RowsUsed().Where(r => !r.IsEmpty());
 
-            LeftRowDict = RowUtils.RowsToDict(LeftRows);
-            RightRowDict = RowUtils.RowsToDict(RightRows);
+            HelperRows LeftHelper = new HelperRows(LeftRows);
+            HelperRows RightHelper = new HelperRows(RightRows);
+            LeftRowDict = LeftHelper.RowsToDict();
+            RightRowDict = RightHelper.RowsToDict();
 
             return UpdateListBySheet(bReturnWhenFound);
         }
@@ -398,7 +433,7 @@ namespace excelMerge2
                     TargetSheet.Row(Sub).InsertRowsAbove(1);
                     targetRow = TargetSheet.Row(Sub);
                 }
-                RowUtils.CopyRow(sourceRow, targetRow);
+                HelperRows.CopyRow(sourceRow, targetRow);
             }
             UpdateList();
         }
