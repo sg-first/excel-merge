@@ -360,11 +360,17 @@ namespace excelMerge2
                     {
                         ListLeft.Items.Add(LeftItem);
                         ListRight.Items.Add(RightItem);
+                        //选中所有差异
+                        if (bRowHasDiff)
+                        {
+                            ListLeft.SelectedItems.Add(LeftItem);
+                            ListRight.SelectedItems.Add(RightItem);
+                        }
                     }
                 }
             }
 
-            LabelDiffNum.Content = DiffNum;
+            LabelDiffNum.Content = DiffNum; //差异数
             return DiffNum > 0;
         }
 
