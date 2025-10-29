@@ -86,6 +86,33 @@ namespace excelMerge2
                 return r.RowNumber().ToString(); //没有主键，用行号当主键
             }
         }
+
+        public IDictionary<int, int> GetMaxLengthDict()
+        {
+            var maxLengthDict = new Dictionary<int, int>();
+            foreach (IXLRow row in Rows)
+            {
+                foreach (IXLCell Cell in row.CellsUsed())
+                {
+                    string content = SafeRow.GetValue(Cell);
+                    int len = content.Length;
+
+                    int columnNumber = Cell.Address.ColumnNumber;
+                    if (maxLengthDict.TryGetValue(columnNumber, out int existing))
+                    {
+                        if (len > existing)
+                        {
+                            maxLengthDict[columnNumber] = len;
+                        }
+                    }
+                    else
+                    {
+                        maxLengthDict[columnNumber] = len;
+                    }
+                }
+            }
+            return maxLengthDict;
+        }
     }
 
     public class SafeRow
@@ -94,20 +121,25 @@ namespace excelMerge2
         public SafeRow(IXLRow InData) { Data = InData; }
         public SafeRow(Dictionary<string, IXLRow> Dict, string Key) { Dict.TryGetValue(Key, out Data); }
 
+        public static string GetValue(IXLCell Cell)
+        {
+            try
+            {
+                return Cell.GetString();
+                //return Cell.CachedValue.ToString();
+            }
+            catch (NotImplementedException)
+            {
+                return Cell.CachedValue.ToString();
+            }
+        }
+
         public string GetValue(int i)
         {
             if (Data != null)
             {
-                var Cell = Data.Cell(i);
-                try
-                {
-                    return Cell.GetString();
-                    //return Cell.CachedValue.ToString();
-                }
-                catch (NotImplementedException)
-                {
-                    return Cell.CachedValue.ToString();
-                }
+                IXLCell Cell = Data.Cell(i);
+                return GetValue(Cell);
             }
             else
             {
@@ -132,6 +164,8 @@ namespace excelMerge2
             return GetCount(Data);
         }
     }
+
+    public enum EOptTable { Left, Right }
 
     public partial class MainWindow : Window
     {
@@ -161,14 +195,51 @@ namespace excelMerge2
             }
         }
 
+        //表数据
         string LeftPath, RightPath;
         XLWorkbook LeftBook,RightBook;
         IXLWorksheet LeftSheet, RightSheet;
-        Dictionary<string, IXLRow> LeftRowDict, RightRowDict;
-        Dictionary<string, ItemData> LeftItemDict, RightItemDict;
         int LeftSheetId = 1, RightSheetId = 1;
         string SaveAsPath = null;
+        //sheet缓存数据
+        public class SheetData
+        {
+            public Dictionary<string, IXLRow> LeftRowDict, RightRowDict;
+            public IEnumerable<string> AllKeys;
+            public IDictionary<int, int> LeftMaxLengthDict, RightMaxLengthDict;
+            public void SetRowDict(IEnumerable<IXLRow> LeftRows, IEnumerable<IXLRow> RightRows)
+            {
+                HelperRows LeftHelper = new HelperRows(LeftRows);
+                HelperRows RightHelper = new HelperRows(RightRows);
+                LeftRowDict = LeftHelper.RowsToDict();
+                RightRowDict = RightHelper.RowsToDict();
+                AllKeys = LeftRowDict.Keys.Union(RightRowDict.Keys);
+                LeftMaxLengthDict = LeftHelper.GetMaxLengthDict();
+                RightMaxLengthDict = RightHelper.GetMaxLengthDict();
+            }
 
+
+            public Dictionary<string, ItemData> LeftItemDict = new Dictionary<string, ItemData>();
+            public Dictionary<string, ItemData> RightItemDict = new Dictionary<string, ItemData>();
+            public void Clear()
+            {
+                if (LeftRowDict != null)
+                {
+                    LeftRowDict.Clear();
+                    RightRowDict.Clear();
+                    //allKeys
+                    LeftMaxLengthDict.Clear();
+                    RightMaxLengthDict.Clear();
+                }
+                else
+                {
+                    LeftItemDict.Clear();
+                    RightItemDict.Clear();
+                }
+            }
+        }
+        SheetData SheetCacheData = new SheetData();
+        //滚动同步
         ScrollViewer svLeft, svRight;
         bool bSyncingSv = false;
 
@@ -207,16 +278,7 @@ namespace excelMerge2
         {
             ListLeft.Items.Clear();
             ListRight.Items.Clear();
-            if(LeftRowDict != null)
-            {
-                LeftRowDict.Clear();
-                RightRowDict.Clear();
-            }
-            else
-            {
-                LeftItemDict = new Dictionary<string, ItemData>();
-                RightItemDict = new Dictionary<string, ItemData>();
-            }
+            SheetCacheData.Clear();
         }
 
         void InitSheetsList()
@@ -300,11 +362,7 @@ namespace excelMerge2
 
             IEnumerable<IXLRow> LeftRows = LeftSheet.RowsUsed().Where(r => !r.IsEmpty());
             IEnumerable<IXLRow> RightRows = RightSheet.RowsUsed().Where(r => !r.IsEmpty());
-
-            HelperRows LeftHelper = new HelperRows(LeftRows);
-            HelperRows RightHelper = new HelperRows(RightRows);
-            LeftRowDict = LeftHelper.RowsToDict();
-            RightRowDict = RightHelper.RowsToDict();
+            SheetCacheData.SetRowDict(LeftRows, RightRows);
 
             return UpdateListBySheet(bReturnWhenFound);
         }
@@ -312,12 +370,11 @@ namespace excelMerge2
         bool UpdateListBySheet(bool bReturnWhenFound = false)
         {
             bool bOnlyShowDiff = IsShowOnlyDiff();
-            IEnumerable<string> allKeys = LeftRowDict.Keys.Union(RightRowDict.Keys);
             int DiffNum = 0;
-            foreach (string key in allKeys)
+            foreach (string key in SheetCacheData.AllKeys)
             {
-                SafeRow lRow = new SafeRow(LeftRowDict, key);
-                SafeRow rRow = new SafeRow(RightRowDict, key);
+                SafeRow lRow = new SafeRow(SheetCacheData.LeftRowDict, key);
+                SafeRow rRow = new SafeRow(SheetCacheData.RightRowDict, key);
                 int lCount = lRow.GetCount();
                 int rCount = rRow.GetCount();
                 int Count = Math.Max(lCount, rCount);
@@ -325,14 +382,14 @@ namespace excelMerge2
                 bool bRowHasDiff = false;
                 ItemData LeftItem = new ItemData(key);
                 ItemData RightItem = new ItemData(key);
-                LeftItemDict[key] = LeftItem;
-                RightItemDict[key] = RightItem;
-                for (int i = 1; i <= Count; i++)
+                SheetCacheData.LeftItemDict[key] = LeftItem;
+                SheetCacheData.RightItemDict[key] = RightItem;
+                for (int ColNumber = 1; ColNumber <= Count; ColNumber++)
                 {
-                    string lValue = lRow.GetValue(i);
-                    string rValue = rRow.GetValue(i);
                     var lRun = new Run("|" + lValue + "\t");
                     var rRun = new Run("|" + rValue + "\t");
+                    string lValue = lRow.GetValue(ColNumber);
+                    string rValue = rRow.GetValue(ColNumber);
                     if (!string.Equals(lValue, rValue, StringComparison.Ordinal))
                     {
                         //不一样
@@ -408,7 +465,7 @@ namespace excelMerge2
                 var sourceList = (ListBox)sender;
                 bool bLeft = sourceList == ListLeft;
                 ListBox targetList = bLeft ? ListRight : ListLeft;
-                Dictionary<string, ItemData> targetItemDict = bLeft ? RightItemDict : LeftItemDict;
+                Dictionary<string, ItemData> targetItemDict = bLeft ? SheetCacheData.RightItemDict : SheetCacheData.LeftItemDict;
                 try
                 {
                     bSyncingSv = true;
@@ -437,8 +494,8 @@ namespace excelMerge2
         //merge
         void SyncData(System.Collections.IList sourceItems, bool bLeft)
         {
-            Dictionary<string, IXLRow> sourceRowDict = bLeft ? LeftRowDict : RightRowDict;
-            Dictionary<string, IXLRow> targetRowDict = bLeft ? RightRowDict : LeftRowDict;
+            Dictionary<string, IXLRow> sourceRowDict = bLeft ? SheetCacheData.LeftRowDict : SheetCacheData.RightRowDict;
+            Dictionary<string, IXLRow> targetRowDict = bLeft ? SheetCacheData.RightRowDict : SheetCacheData.LeftRowDict;
             IXLWorksheet TargetSheet = bLeft ? RightSheet : LeftSheet;
             //把source的ItemDatas转成Rows
             foreach (ItemData i in sourceItems)
