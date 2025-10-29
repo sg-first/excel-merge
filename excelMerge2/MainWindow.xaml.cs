@@ -72,12 +72,19 @@ namespace excelMerge2
 
         public string GetPrimaryKey(IXLRow r)
         {
-            string ret = "";
-            foreach(int i in PrimaryKeySubs)
+            if(PrimaryKeySubs.Count > 0)
             {
-                ret += r.Cell(i).GetString();
+                string ret = "";
+                foreach (int i in PrimaryKeySubs)
+                {
+                    ret += r.Cell(i).GetString();
+                }
+                return ret;
             }
-            return ret;
+            else
+            {
+                return r.RowNumber().ToString(); //没有主键，用行号当主键
+            }
         }
     }
 
