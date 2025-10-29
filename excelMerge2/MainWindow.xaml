@@ -41,10 +41,15 @@
         </StackPanel>
 
         <!-- 主区域：两个 ListBox 和 中间箭头按钮 -->
-        <ListBox Grid.Row="1" Grid.Column="0" Name="ListLeft"
-             SelectionChanged="List_SelectionChanged" SelectionMode="Multiple"
-             Margin="4" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
-             MinWidth="120" MinHeight="100"/>
+        <ListView Grid.Row="1" Grid.Column="0" Name="ListLeft"
+          SelectionChanged="List_SelectionChanged" SelectionMode="Multiple"
+          Margin="4" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+          MinWidth="120" MinHeight="100"
+          ItemsSource="{Binding LeftAllItemData}">
+            <ListView.View>
+                <GridView x:Name="LeftGridView"/>
+            </ListView.View>
+        </ListView>
 
         <!-- 中间竖向按钮 -->
         <StackPanel Grid.Row="1" Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="4">
@@ -52,10 +57,15 @@
             <Button Content="←" Width="40" Height="30" Margin="0,8" Click="RightToLeft"/>
         </StackPanel>
 
-        <ListBox Grid.Row="1" Grid.Column="2" Name="ListRight"
-             SelectionChanged="List_SelectionChanged" SelectionMode="Multiple"
-             Margin="4" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
-             MinWidth="120" MinHeight="100"/>
+        <ListView Grid.Row="1" Grid.Column="2" Name="ListRight"
+          SelectionChanged="List_SelectionChanged" SelectionMode="Multiple"
+          Margin="4" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+          MinWidth="120" MinHeight="100"
+          ItemsSource="{Binding RightAllItemData}">
+            <ListView.View>
+                <GridView x:Name="RightGridView"/>
+            </ListView.View>
+        </ListView>
 
         <ListBox Grid.Row="1" Grid.Column="3" Name="ListSheet"
              SelectionChanged="Sheet_SelectionChanged"

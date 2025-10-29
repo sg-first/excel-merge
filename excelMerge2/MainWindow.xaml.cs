@@ -13,6 +13,8 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using System.Collections.ObjectModel;
+using System.Windows.Markup;
 
 using ClosedXML.Excel;
 
@@ -21,11 +23,24 @@ namespace excelMerge2
     /// <summary>
     /// MainWindow.xaml 的交互逻辑
     /// </summary>
-    public class ItemData : TextBlock
+    public class ItemData
     {
         string key;
         public ItemData(string InKey) { key = InKey; }
         public string GetKey() { return key; }
+
+        public struct CellData
+        {
+            public string Content { get; set; }
+            public Brush Color { get; set; }
+        }
+
+        public ObservableCollection<CellData> AllCell { get; } = new ObservableCollection<CellData>();
+
+        public void AddCell(string InContent, Brush InColor)
+        {
+            AllCell.Add(new ItemData.CellData { Content = InContent, Color = InColor });
+        }
     }
 
     public class HelperRows
@@ -165,12 +180,11 @@ namespace excelMerge2
         }
     }
 
-    public enum EOptTable { Left, Right }
-
     public partial class MainWindow : Window
     {
         public MainWindow()
         {
+            DataContext = this;
             //崩溃时输出原因
             AppDomain.CurrentDomain.UnhandledException += (s, e) =>
             {
@@ -221,6 +235,7 @@ namespace excelMerge2
 
             public Dictionary<string, ItemData> LeftItemDict = new Dictionary<string, ItemData>();
             public Dictionary<string, ItemData> RightItemDict = new Dictionary<string, ItemData>();
+
             public void Clear()
             {
                 if (LeftRowDict != null)
@@ -239,6 +254,9 @@ namespace excelMerge2
             }
         }
         SheetData SheetCacheData = new SheetData();
+        //和GridList UI数据绑定的Data
+        public ObservableCollection<ItemData> LeftAllItemData { get; } = new ObservableCollection<ItemData>();
+        public ObservableCollection<ItemData> RightAllItemData { get; } = new ObservableCollection<ItemData>();
         //滚动同步
         ScrollViewer svLeft, svRight;
         bool bSyncingSv = false;
@@ -274,10 +292,15 @@ namespace excelMerge2
             }
         }
 
+        void ClearGridList()
+        {
+            LeftAllItemData.Clear();
+            RightAllItemData.Clear();
+        }
+
         void InitData()
         {
-            ListLeft.Items.Clear();
-            ListRight.Items.Clear();
+            ClearGridList();
             SheetCacheData.Clear();
         }
 
@@ -386,17 +409,13 @@ namespace excelMerge2
                 SheetCacheData.RightItemDict[key] = RightItem;
                 for (int ColNumber = 1; ColNumber <= Count; ColNumber++)
                 {
-                    var lRun = new Run("|" + lValue + "\t");
-                    var rRun = new Run("|" + rValue + "\t");
                     string lValue = lRow.GetValue(ColNumber);
                     string rValue = rRow.GetValue(ColNumber);
                     if (!string.Equals(lValue, rValue, StringComparison.Ordinal))
                     {
                         //不一样
-                        lRun.Foreground = Brushes.Red;
-                        rRun.Foreground = Brushes.Red;
-                        LeftItem.Inlines.Add(lRun);
-                        RightItem.Inlines.Add(rRun);
+                        LeftItem.AddCell(lValue, Brushes.Red);
+                        RightItem.AddCell(rValue, Brushes.Red);
 
                         if (bReturnWhenFound)
                         {
@@ -411,10 +430,8 @@ namespace excelMerge2
                     else
                     {
                         //一样
-                        lRun.Foreground = Brushes.Black;
-                        rRun.Foreground = Brushes.Black;
-                        LeftItem.Inlines.Add(lRun);
-                        RightItem.Inlines.Add(rRun);
+                        LeftItem.AddCell(lValue, Brushes.Black);
+                        RightItem.AddCell(rValue, Brushes.Black);
                     }
                 }
 
@@ -422,8 +439,9 @@ namespace excelMerge2
                 {
                     if (bRowHasDiff || (!bRowHasDiff && !bOnlyShowDiff))
                     {
-                        ListLeft.Items.Add(LeftItem);
-                        ListRight.Items.Add(RightItem);
+                        //把item添加到UI TODO:感觉可以在LeftItemDict都添加完毕后统一搬一遍
+                        LeftAllItemData.Add(LeftItem);
+                        RightAllItemData.Add(RightItem);
                         //选中所有差异
                         if (bRowHasDiff)
                         {
@@ -434,7 +452,12 @@ namespace excelMerge2
                 }
             }
 
-            LabelDiffNum.Content = DiffNum; //差异数
+            if (!bReturnWhenFound)
+            {
+                SetupGridList(LeftGridView);
+                SetupGridList(RightGridView);
+                LabelDiffNum.Content = DiffNum; //差异数
+            }
             return DiffNum > 0;
         }
 
@@ -445,6 +468,35 @@ namespace excelMerge2
             LeftBook = new XLWorkbook(LeftPath);
             RightBook = new XLWorkbook(RightPath);
             UpdateList(true);
+        }
+
+        //GridList UI
+        private void SetupGridList(GridView gridView)
+        {
+            gridView.Columns.Clear();
+            // 取当前所有行的最大列数
+            var AllItemData = gridView == LeftGridView ? LeftAllItemData : RightAllItemData;
+            int maxCols = AllItemData.Max(r => r.AllCell.Count);
+
+            for (int i = 0; i < maxCols; i++)
+            {
+                var col = new GridViewColumn { Header = $"{i + 1}" };
+                col.CellTemplate = CreateCellTemplate(i);
+                gridView.Columns.Add(col);
+            }
+        }
+
+        private DataTemplate CreateCellTemplate(int index)
+        {
+            // 注意：这里用双大括号 "{{" 来在插值字符串中输出 "{Binding ...}"
+            string xaml =
+            $@"<DataTemplate xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation'>
+                <TextBlock Text='{{Binding AllCell[{index}].Content}}'
+                           Foreground='{{Binding AllCell[{index}].Color}}'
+                           Padding='4,2'
+                           VerticalAlignment='Center'/>
+            </DataTemplate>";
+            return (DataTemplate)XamlReader.Parse(xaml);
         }
 
         //select
@@ -642,9 +694,7 @@ namespace excelMerge2
 
         private void CheckBox_Click(object sender, RoutedEventArgs e)
         {
-            //清空UI
-            ListLeft.Items.Clear();
-            ListRight.Items.Clear();
+            ClearGridList();
             UpdateListBySheet(false);
         }
     }
