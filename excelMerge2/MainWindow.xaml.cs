@@ -292,12 +292,6 @@ namespace excelMerge2
             }
         }
 
-        void ClearGridList()
-        {
-            LeftAllItemData.Clear();
-            RightAllItemData.Clear();
-        }
-
         void InitData()
         {
             ClearGridList();
@@ -497,6 +491,12 @@ namespace excelMerge2
                            VerticalAlignment='Center'/>
             </DataTemplate>";
             return (DataTemplate)XamlReader.Parse(xaml);
+        }
+
+        void ClearGridList()
+        {
+            LeftAllItemData.Clear();
+            RightAllItemData.Clear();
         }
 
         //select
