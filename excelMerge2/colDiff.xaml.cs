@@ -51,46 +51,6 @@ namespace excelMerge2
         bool bSyncingSv = false; //左右同步中标记
 
         //diff
-        public static bool IsLeft(bool bSourceLeft, bool bSource)
-        {
-            if (bSourceLeft)
-            {
-                if (bSource)
-                {
-                    return true;
-                }
-                else
-                {
-                    return false;
-                }
-            }
-            else
-            {
-                if (bSource)
-                {
-                    return false;
-                }
-                else
-                {
-                    return true;
-                }
-            }
-        }
-
-        IXLWorksheet GetSourceOrTargetSheet(bool bSourceLeft, bool bSource)
-        {
-            bool bLeft = IsLeft(bSourceLeft, bSource);
-            IXLWorksheet sheet = bLeft ? App.GetApp().LeftSheet : App.GetApp().RightSheet;
-            return sheet;
-        }
-
-        ListBox GetSourceOrTargetList(bool bSourceLeft, bool bSource)
-        {
-            bool bLeft = IsLeft(bSourceLeft, bSource);
-            ListBox sheet = bLeft ? ListLeft : ListRight;
-            return sheet;
-        }
-
         public static string GetColFirstValue(IXLWorksheet sheet, int i)
         {
             IXLCell cell = sheet.Cell(1, i);
@@ -159,7 +119,23 @@ namespace excelMerge2
                 var sourceList = (ListBox)sender;
                 bool bLeft = sourceList == ListLeft;
                 ListBox targetList = bLeft ? ListRight : ListLeft;
-
+                Dictionary<string, TextItemData> targetItemDict = bLeft ? RightItemDict : LeftItemDict;
+                bSyncingSv = true;
+                /*if (e.AddedItems.Count > 0)
+                {
+                    //添加
+                    ItemData sourceItem = (ItemData)e.AddedItems[0];
+                    ItemData targetItem = GetItemFromDict(sourceItem, targetItemDict);
+                    targetList.SelectedItems.Add(targetItem);
+                }
+                else
+                {
+                    //删除
+                    ItemData sourceItem = (ItemData)e.RemovedItems[0];
+                    ItemData targetItem = GetItemFromDict(sourceItem, targetItemDict);
+                    targetList.SelectedItems.Remove(targetItem);
+                }*/
+                bSyncingSv = false;
             }
         }
 
