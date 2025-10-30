@@ -38,7 +38,7 @@
         <!-- 中间竖向按钮 -->
         <StackPanel Grid.Row="1" Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="4">
             <Button Content="→" Width="40" Height="30" Margin="0,8" Click="LeftToRight"/>
-            <Button Content="←" Width="40" Height="30" Margin="0,8" Click="RightToLeft"/>
+            <Button Content="←" Width="40" Height="30" Margin="0,8" Click="RightToLeft" IsEnabled="False"/>
         </StackPanel>
 
         <ListBox Grid.Row="1" Grid.Column="2" Name="ListRight"

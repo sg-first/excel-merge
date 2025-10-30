@@ -73,15 +73,20 @@ namespace excelMerge2
         private void SetPrimaryKeySubs()
         {
             PrimaryKeySubs.Clear();
-            IXLCells KeyConfigRow = Rows.ElementAt(3).CellsUsed();
-            for (int i = 0; i < KeyConfigRow.Count(); i++)
+            const int PrimaryKeyRowNumber = 3;
+            int a = Rows.Count();
+            if (Rows.Count() > PrimaryKeyRowNumber)
             {
-                string KeyConfig = KeyConfigRow.ElementAt(i).GetString();
-                if (KeyConfig == "PrimaryKey")
+                IXLCells KeyConfigRow = Rows.ElementAt(PrimaryKeyRowNumber).CellsUsed();
+                for (int i = 0; i < KeyConfigRow.Count(); i++)
                 {
-                    PrimaryKeySubs.Add(i + 1); //取的时候是通过IXLRow.Cell(i)取的，从1开始
+                    string KeyConfig = KeyConfigRow.ElementAt(i).GetString();
+                    if (KeyConfig == "PrimaryKey")
+                    {
+                        PrimaryKeySubs.Add(i + 1); //取的时候是通过IXLRow.Cell(i)取的，从1开始
+                    }
                 }
-            }
+            }    
         }
 
         public string GetPrimaryKey(IXLRow r)
@@ -207,6 +212,7 @@ namespace excelMerge2
         public ObservableCollection<ItemData> RightAllItemData { get; } = new ObservableCollection<ItemData>();
         ScrollSyncer Scroller; //滚动同步
         bool bSyncingSv = false; //左右同步中标记
+        colDiff ColDiffWindow = null; //colDiff用的子窗体
 
         void InitData()
         {
@@ -359,6 +365,20 @@ namespace excelMerge2
             LeftBook = new XLWorkbook(LeftPath);
             RightBook = new XLWorkbook(RightPath);
             UpdateList(true);
+        }
+
+        private void DiffCol_Click(object sender, RoutedEventArgs e)
+        {
+            if (App.GetApp().LeftSheet != null)
+            {
+                if (ColDiffWindow == null)
+                {
+                    ColDiffWindow = new colDiff();
+                    ColDiffWindow.Closed += (s, args) => ColDiffWindow = null;
+                    ColDiffWindow.Owner = this;
+                }
+                ColDiffWindow.Show();
+            }
         }
 
         //GridList UI
