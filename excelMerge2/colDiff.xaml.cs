@@ -34,12 +34,18 @@ namespace excelMerge2
         public colDiff()
         {
             InitializeComponent();
+            //初始化数据
+            LeftItemDict.Clear();
+            RightItemDict.Clear();
             //初始化滚动同步
             Scroller = new ScrollSyncer(ListLeft, ListRight);
             Scroller.InitScroller();
 
             UpdateList();
         }
+
+        Dictionary<string, TextItemData> LeftItemDict = new Dictionary<string, TextItemData>();
+        Dictionary<string, TextItemData> RightItemDict = new Dictionary<string, TextItemData>();
 
         ScrollSyncer Scroller; //滚动同步
         bool bSyncingSv = false; //左右同步中标记
@@ -109,36 +115,34 @@ namespace excelMerge2
             int rCount = App.GetApp().RightSheet.LastColumnUsed().ColumnNumber();
             bool bSourceLeft = lCount >= rCount;
             //建target的 value->number 映射
-            IXLWorksheet sourceSheet = GetSourceOrTargetSheet(bSourceLeft, true);
-            IXLWorksheet targetSheet = GetSourceOrTargetSheet(bSourceLeft, false);
-            Dictionary<string, int> sourceValueToNumberDict = GetValueToNumberDict(sourceSheet);
-            Dictionary<string, int> targetValueToNumberDict = GetValueToNumberDict(targetSheet);
-            Dictionary<string, int>.KeyCollection sourceValues = sourceValueToNumberDict.Keys;
-            Dictionary<string, int>.KeyCollection targetValues = targetValueToNumberDict.Keys;
-            IEnumerable<string> AllValues = sourceValues.Union(targetValues);
+            Dictionary<string, int> leftValueToNumberDict = GetValueToNumberDict(App.GetApp().LeftSheet);
+            Dictionary<string, int> rightValueToNumberDict = GetValueToNumberDict(App.GetApp().RightSheet);
+            Dictionary<string, int>.KeyCollection leftValues = leftValueToNumberDict.Keys;
+            Dictionary<string, int>.KeyCollection rightValues = rightValueToNumberDict.Keys;
+            IEnumerable<string> AllValues = leftValues.Union(rightValues);
             //进行diff
-            ListBox sourceList = GetSourceOrTargetList(bSourceLeft, true);
-            ListBox targetList = GetSourceOrTargetList(bSourceLeft, false);
             foreach (string value in AllValues)
             {
-                string sourcContent = sourceValues.Contains(value) ? value : "";
-                string targetContent = targetValues.Contains(value) ? value : "";
-                TextItemData sourceItemData = new TextItemData(value, sourcContent);
-                TextItemData targetItemData = new TextItemData(value, targetContent);
-                if (sourcContent == targetContent)
+                string leftContent = leftValues.Contains(value) ? value : "";
+                string rightContent = rightValues.Contains(value) ? value : "";
+                TextItemData leftItemData = new TextItemData(value, leftContent);
+                TextItemData rightItemData = new TextItemData(value, rightContent);
+                LeftItemDict[value] = leftItemData;
+                RightItemDict[value] = rightItemData;
+                if (leftContent == rightContent)
                 {
-                    //相同元素
-                    sourceItemData.Foreground = Brushes.Black;
-                    targetItemData.Foreground = Brushes.Black;
+                    //一样
+                    leftItemData.Foreground = Brushes.Black;
+                    rightItemData.Foreground = Brushes.Black;
                 }
                 else
                 {
-                    //存在差异
-                    sourceItemData.Foreground = Brushes.Red;
-                    targetItemData.Foreground = Brushes.Red;
+                    //不一样
+                    leftItemData.Foreground = Brushes.Red;
+                    rightItemData.Foreground = Brushes.Red;
                 }
-                sourceList.Items.Add(sourceItemData);
-                targetList.Items.Add(targetItemData);
+                ListLeft.Items.Add(leftItemData);
+                ListRight.Items.Add(rightItemData);
             }
         }
 

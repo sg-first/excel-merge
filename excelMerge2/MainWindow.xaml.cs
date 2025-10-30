@@ -38,7 +38,7 @@ namespace excelMerge2
 
         public void AddCell(string InContent, Brush InColor)
         {
-            AllCell.Add(new ItemData.CellData { Content = InContent, Color = InColor });
+            AllCell.Add(new CellData { Content = InContent, Color = InColor });
         }
     }
 
