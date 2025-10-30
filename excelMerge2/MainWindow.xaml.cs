@@ -168,6 +168,7 @@ namespace excelMerge2
         string LeftPath, RightPath;
         XLWorkbook LeftBook, RightBook;
         int LeftSheetId = 1, RightSheetId = 1;
+        IXLRow TitleRow;
         string SaveAsPath = null;
         //sheet缓存数据
         public class SheetData
@@ -282,6 +283,7 @@ namespace excelMerge2
 
             IEnumerable<IXLRow> LeftRows = App.GetApp().LeftSheet.RowsUsed().Where(r => !r.IsEmpty());
             IEnumerable<IXLRow> RightRows = App.GetApp().RightSheet.RowsUsed().Where(r => !r.IsEmpty());
+            TitleRow = LeftRows.First();
             SheetCacheData.SetRowDict(LeftRows, RightRows);
 
             return UpdateGridListBySheet(bReturnWhenFound);
@@ -385,14 +387,14 @@ namespace excelMerge2
         private void SetupGridList(GridView gridView)
         {
             gridView.Columns.Clear();
-            // 取当前所有行的最大列数
             var AllItemData = gridView == LeftGridView ? LeftAllItemData : RightAllItemData;
             if (AllItemData.Count > 0)
             {
-                int maxCols = AllItemData.Max(r => r.AllCell.Count);
+                int maxCols = AllItemData.Max(r => r.AllCell.Count);  //取当前所有行的最大列数
                 for (int i = 0; i < maxCols; i++)
                 {
-                    var col = new GridViewColumn { Header = $"{i + 1}" };
+                    IXLCell TitleCell = TitleRow.Cell(i + 1);
+                    GridViewColumn col = new GridViewColumn { Header = SafeRow.GetValue(TitleCell) };
                     col.CellTemplate = CreateCellTemplate(i);
                     gridView.Columns.Add(col);
                 }
