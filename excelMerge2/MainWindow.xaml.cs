@@ -129,64 +129,6 @@ namespace excelMerge2
         }
     }
 
-    public class SafeRow
-    {
-        public IXLRow Data;
-        public SafeRow(IXLRow InData) { Data = InData; }
-        public SafeRow(Dictionary<string, IXLRow> Dict, string Key) { Dict.TryGetValue(Key, out Data); }
-
-        public static string GetValue(IXLCell Cell)
-        {
-            try
-            {
-                string rawStr = Cell.GetString();
-                string cacheStr = Cell.CachedValue.ToString();
-                if (rawStr == "" && cacheStr != "")
-                {
-                    return cacheStr;
-                }
-                else
-                {
-                    return rawStr;
-                }
-            }
-            catch (NotImplementedException)
-            {
-                return Cell.CachedValue.ToString();
-            }
-        }
-
-        public string GetValue(int i)
-        {
-            if (Data != null)
-            {
-                IXLCell Cell = Data.Cell(i);
-                return GetValue(Cell);
-            }
-            else
-            {
-                return "";
-            }
-        }
-
-        public static int GetCount(IXLRow InData)
-        {
-            if (InData != null)
-            {
-                return InData.LastCellUsed().Address.ColumnNumber;
-            }
-            else
-            {
-                return 0;
-            }
-        }
-
-        public int GetCount()
-        {
-            return GetCount(Data);
-        }
-    }
-
     public partial class MainWindow : Window
     {
         public MainWindow()
@@ -425,13 +367,15 @@ namespace excelMerge2
             gridView.Columns.Clear();
             // 取当前所有行的最大列数
             var AllItemData = gridView == LeftGridView ? LeftAllItemData : RightAllItemData;
-            int maxCols = AllItemData.Max(r => r.AllCell.Count);
-
-            for (int i = 0; i < maxCols; i++)
+            if (AllItemData.Count > 0)
             {
-                var col = new GridViewColumn { Header = $"{i + 1}" };
-                col.CellTemplate = CreateCellTemplate(i);
-                gridView.Columns.Add(col);
+                int maxCols = AllItemData.Max(r => r.AllCell.Count);
+                for (int i = 0; i < maxCols; i++)
+                {
+                    var col = new GridViewColumn { Header = $"{i + 1}" };
+                    col.CellTemplate = CreateCellTemplate(i);
+                    gridView.Columns.Add(col);
+                }
             }
         }
 

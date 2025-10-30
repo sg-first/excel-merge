@@ -14,7 +14,65 @@ namespace excelMerge2
     /// <summary>
     /// App.xaml 的交互逻辑
     /// </summary>
-    
+
+    public class SafeRow
+    {
+        public IXLRow Data;
+        public SafeRow(IXLRow InData) { Data = InData; }
+        public SafeRow(Dictionary<string, IXLRow> Dict, string Key) { Dict.TryGetValue(Key, out Data); }
+
+        public static string GetValue(IXLCell Cell)
+        {
+            try
+            {
+                string rawStr = Cell.GetString();
+                string cacheStr = Cell.CachedValue.ToString();
+                if (rawStr == "" && cacheStr != "")
+                {
+                    return cacheStr;
+                }
+                else
+                {
+                    return rawStr;
+                }
+            }
+            catch (NotImplementedException)
+            {
+                return Cell.CachedValue.ToString();
+            }
+        }
+
+        public string GetValue(int i)
+        {
+            if (Data != null)
+            {
+                IXLCell Cell = Data.Cell(i);
+                return GetValue(Cell);
+            }
+            else
+            {
+                return "";
+            }
+        }
+
+        public static int GetCount(IXLRow InData)
+        {
+            if (InData != null)
+            {
+                return InData.LastCellUsed().Address.ColumnNumber;
+            }
+            else
+            {
+                return 0;
+            }
+        }
+
+        public int GetCount()
+        {
+            return GetCount(Data);
+        }
+    }
+
     public class ScrollSyncer
     {
         ListBox ListLeft, ListRight;
