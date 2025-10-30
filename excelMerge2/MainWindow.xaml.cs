@@ -15,7 +15,6 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.Collections.ObjectModel;
 using System.Windows.Markup;
-
 using ClosedXML.Excel;
 
 namespace excelMerge2
@@ -140,8 +139,16 @@ namespace excelMerge2
         {
             try
             {
-                return Cell.GetString();
-                //return Cell.CachedValue.ToString();
+                string rawStr = Cell.GetString();
+                string cacheStr = Cell.CachedValue.ToString();
+                if (rawStr == "" && cacheStr != "")
+                {
+                    return cacheStr;
+                }
+                else
+                {
+                    return rawStr;
+                }
             }
             catch (NotImplementedException)
             {
@@ -192,6 +199,7 @@ namespace excelMerge2
                 Environment.Exit(1);
             };
             InitializeComponent();
+            Scroller = new ScrollSyncer(ListLeft, ListRight); //初始化滚动同步
             //命令行参数
             string[] CommandArgs = Environment.GetCommandLineArgs();
             if (CommandArgs.Length == 3)
@@ -211,8 +219,7 @@ namespace excelMerge2
 
         //表数据
         string LeftPath, RightPath;
-        XLWorkbook LeftBook,RightBook;
-        IXLWorksheet LeftSheet, RightSheet;
+        XLWorkbook LeftBook, RightBook;
         int LeftSheetId = 1, RightSheetId = 1;
         string SaveAsPath = null;
         //sheet缓存数据
@@ -231,7 +238,6 @@ namespace excelMerge2
                 LeftMaxLengthDict = LeftHelper.GetMaxLengthDict();
                 RightMaxLengthDict = RightHelper.GetMaxLengthDict();
             }
-
 
             public Dictionary<string, ItemData> LeftItemDict = new Dictionary<string, ItemData>();
             public Dictionary<string, ItemData> RightItemDict = new Dictionary<string, ItemData>();
@@ -257,40 +263,8 @@ namespace excelMerge2
         //和GridList UI数据绑定的Data
         public ObservableCollection<ItemData> LeftAllItemData { get; } = new ObservableCollection<ItemData>();
         public ObservableCollection<ItemData> RightAllItemData { get; } = new ObservableCollection<ItemData>();
-        //滚动同步
-        ScrollViewer svLeft, svRight;
-        bool bSyncingSv = false;
-
-        ScrollViewer FindScrollViewer(DependencyObject d)
-        {
-            if (d == null) return null;
-            if (d is ScrollViewer) return (ScrollViewer)d;
-
-            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(d); i++)
-            {
-                var child = VisualTreeHelper.GetChild(d, i);
-                var sv = FindScrollViewer(child);
-                if (sv != null)
-                {
-                    return sv;
-                }
-            }
-            return null;
-        }
-
-        void InitScroller()
-        {
-            svLeft = FindScrollViewer(ListLeft);
-            svRight = FindScrollViewer(ListRight);
-            if (svLeft != null)
-            {
-                svLeft.ScrollChanged += ScrollChanged;
-            }
-            if (svRight != null)
-            {
-                svRight.ScrollChanged += ScrollChanged;
-            }
-        }
+        ScrollSyncer Scroller; //滚动同步
+        bool bSyncingSv = false; //左右同步中标记
 
         void InitData()
         {
@@ -331,60 +305,41 @@ namespace excelMerge2
             }
         }
 
-        void ScrollChanged(object sender, ScrollChangedEventArgs e)
-        {
-            if (!bSyncingSv)
-            {
-                var source = (ScrollViewer)sender;
-                var target = source == svLeft ? svRight : svLeft;
-                try
-                {
-                    bSyncingSv = true;
-                    target.ScrollToVerticalOffset(e.VerticalOffset);
-                    target.ScrollToHorizontalOffset(e.HorizontalOffset);
-                }
-                finally
-                {
-                    bSyncingSv = false;
-                }
-            }
-        }
-
         void UpdateList(bool bFirst = false)
         {
             //清空之前数据
-            InitScroller();
             InitData();
-            if(bFirst)
+            Scroller.InitScroller();
+            if (bFirst)
             {
                 ListSheet.Items.Clear();
                 LeftSheetId = 1;
                 RightSheetId = 1;
                 InitSheetsList(); //最右边的sheet列表
             }
-            LoadAndUpdateListBySheet(LeftSheetId, RightSheetId); //读表
+            LoadAndUpdateGridListBySheet(LeftSheetId, RightSheetId); //读表
         }
 
         bool IsDiffSheet(int InLeftSheetId, int InRightSheetId)
         { 
-            return LoadAndUpdateListBySheet(InLeftSheetId, InRightSheetId, true);
+            return LoadAndUpdateGridListBySheet(InLeftSheetId, InRightSheetId, true);
         }
 
         //根据sheet内容刷新UI
         //bReturnWhenFound: true时只返回有无差异，不做表现
-        bool LoadAndUpdateListBySheet(int InLeftSheetId, int InRightSheetId, bool bReturnWhenFound = false)
+        bool LoadAndUpdateGridListBySheet(int InLeftSheetId, int InRightSheetId, bool bReturnWhenFound = false)
         {
-            LeftSheet = LeftBook.Worksheet(InLeftSheetId);
-            RightSheet = RightBook.Worksheet(InRightSheetId);
+            App.GetApp().LeftSheet = LeftBook.Worksheet(InLeftSheetId);
+            App.GetApp().RightSheet = RightBook.Worksheet(InRightSheetId);
 
-            IEnumerable<IXLRow> LeftRows = LeftSheet.RowsUsed().Where(r => !r.IsEmpty());
-            IEnumerable<IXLRow> RightRows = RightSheet.RowsUsed().Where(r => !r.IsEmpty());
+            IEnumerable<IXLRow> LeftRows = App.GetApp().LeftSheet.RowsUsed().Where(r => !r.IsEmpty());
+            IEnumerable<IXLRow> RightRows = App.GetApp().RightSheet.RowsUsed().Where(r => !r.IsEmpty());
             SheetCacheData.SetRowDict(LeftRows, RightRows);
 
-            return UpdateListBySheet(bReturnWhenFound);
+            return UpdateGridListBySheet(bReturnWhenFound);
         }
 
-        bool UpdateListBySheet(bool bReturnWhenFound = false)
+        bool UpdateGridListBySheet(bool bReturnWhenFound = false)
         {
             bool bOnlyShowDiff = IsShowOnlyDiff();
             int DiffNum = 0;
@@ -548,7 +503,7 @@ namespace excelMerge2
         {
             Dictionary<string, IXLRow> sourceRowDict = bLeft ? SheetCacheData.LeftRowDict : SheetCacheData.RightRowDict;
             Dictionary<string, IXLRow> targetRowDict = bLeft ? SheetCacheData.RightRowDict : SheetCacheData.LeftRowDict;
-            IXLWorksheet TargetSheet = bLeft ? RightSheet : LeftSheet;
+            IXLWorksheet TargetSheet = bLeft ? App.GetApp().RightSheet : App.GetApp().LeftSheet;
             //把source的ItemDatas转成Rows
             foreach (ItemData i in sourceItems)
             {
@@ -695,7 +650,7 @@ namespace excelMerge2
         private void CheckBox_Click(object sender, RoutedEventArgs e)
         {
             ClearGridList();
-            UpdateListBySheet(false);
+            UpdateGridListBySheet(false);
         }
     }
 }
