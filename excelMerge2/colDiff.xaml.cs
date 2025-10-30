@@ -34,21 +34,37 @@ namespace excelMerge2
         public colDiff()
         {
             InitializeComponent();
-            //初始化数据
+            UpdateList();
+        }
+
+        //记录ItemData
+        Dictionary<string, TextItemData> LeftItemDict = new Dictionary<string, TextItemData>();
+        Dictionary<string, TextItemData> RightItemDict = new Dictionary<string, TextItemData>();
+        //记录colNumber
+        Dictionary<string, IXLColumn> LeftValueToColDict;
+        Dictionary<string, IXLColumn> RightValueToColDict;
+
+        ScrollSyncer Scroller; //滚动同步
+        bool bSyncingSv = false; //左右同步中标记
+
+        void UpdateList()
+        {
+            //重置数据
+            ListLeft.Items.Clear();
+            ListRight.Items.Clear();
             LeftItemDict.Clear();
             RightItemDict.Clear();
+            if (LeftValueToColDict != null)
+            {
+                LeftValueToColDict.Clear();
+                RightValueToColDict.Clear();
+            }
             //初始化滚动同步
             Scroller = new ScrollSyncer(ListLeft, ListRight);
             Scroller.InitScroller();
 
-            UpdateList();
+            UpdateListRaw();
         }
-
-        Dictionary<string, TextItemData> LeftItemDict = new Dictionary<string, TextItemData>();
-        Dictionary<string, TextItemData> RightItemDict = new Dictionary<string, TextItemData>();
-
-        ScrollSyncer Scroller; //滚动同步
-        bool bSyncingSv = false; //左右同步中标记
 
         //diff
         public static string GetColFirstValue(IXLWorksheet sheet, int i)
@@ -57,28 +73,29 @@ namespace excelMerge2
             return SafeRow.GetValue(cell);
         }
 
-        public static Dictionary<string, int> GetValueToNumberDict(IXLWorksheet sheet)
+        public static Dictionary<string, IXLColumn> GetValueToNumberDict(IXLWorksheet sheet)
         {
-            var ret = new Dictionary<string, int>();
+            var ret = new Dictionary<string, IXLColumn>();
             int count = sheet.LastColumnUsed().ColumnNumber();
             for (int i = 1; i <= count; i++)
             {
                 string value = GetColFirstValue(sheet, i);
-                ret[value] = i;
+                IXLColumn col = sheet.Column(i);
+                ret[value] = col;
             }
             return ret;
         }
 
-        void UpdateList()
+        void UpdateListRaw()
         {
             int lCount = App.GetApp().LeftSheet.LastColumnUsed().ColumnNumber();
             int rCount = App.GetApp().RightSheet.LastColumnUsed().ColumnNumber();
             bool bSourceLeft = lCount >= rCount;
             //建target的 value->number 映射
-            Dictionary<string, int> leftValueToNumberDict = GetValueToNumberDict(App.GetApp().LeftSheet);
-            Dictionary<string, int> rightValueToNumberDict = GetValueToNumberDict(App.GetApp().RightSheet);
-            Dictionary<string, int>.KeyCollection leftValues = leftValueToNumberDict.Keys;
-            Dictionary<string, int>.KeyCollection rightValues = rightValueToNumberDict.Keys;
+            LeftValueToColDict = GetValueToNumberDict(App.GetApp().LeftSheet);
+            RightValueToColDict = GetValueToNumberDict(App.GetApp().RightSheet);
+            Dictionary<string, IXLColumn>.KeyCollection leftValues = LeftValueToColDict.Keys;
+            Dictionary<string, IXLColumn>.KeyCollection rightValues = RightValueToColDict.Keys;
             IEnumerable<string> AllValues = leftValues.Union(rightValues);
             //进行diff
             foreach (string value in AllValues)
@@ -107,9 +124,46 @@ namespace excelMerge2
         }
 
         //sync
+        static public void CopyCol(IXLColumn sourceCol, IXLColumn targetCol)
+        {
+            int sourceCount = sourceCol.LastCellUsed().Address.RowNumber;
+            for (int i = 1; i <= sourceCount; i++)
+            {
+                IXLCell cell = sourceCol.Cell(i);
+                string sourceValue = SafeRow.GetValue(cell);
+                targetCol.Cell(i).Value = sourceValue;
+            }
+        }
+
         void SyncData(System.Collections.IList sourceItems, bool bLeft)
         {
+            Dictionary<string, IXLColumn> sourceValueToColDict = bLeft ? LeftValueToColDict : RightValueToColDict;
+            Dictionary<string, IXLColumn> targetValueToColDict = bLeft ? RightValueToColDict : LeftValueToColDict;
             IXLWorksheet TargetSheet = bLeft ? App.GetApp().RightSheet : App.GetApp().LeftSheet;
+
+            foreach (TextItemData i in sourceItems)
+            {
+                string value = i.GetKey();
+                IXLColumn sourceCol = sourceValueToColDict[value];
+                IXLColumn targetCol;
+                targetValueToColDict.TryGetValue(value, out targetCol);
+                int Sub = sourceCol.ColumnNumber();
+                if (targetCol == null)
+                {
+                    //之前没有这个一列，需要新增
+                    int targetAppendSub = TargetSheet.ColumnsUsed().Count() + 1;
+                    if (Sub > targetAppendSub) //如果下标很大就加在target末尾
+                    {
+                        Sub = targetAppendSub;
+                    }
+                    TargetSheet.Column(Sub).InsertColumnsBefore(1);
+                    targetCol = TargetSheet.Column(Sub);
+                }
+                CopyCol(sourceCol, targetCol);
+            }
+            //刷新UI
+            ((MainWindow)Owner).UpdateList();
+            UpdateList();
         }
 
         public static TextItemData GetItemFromDict(TextItemData sourceItem, Dictionary<string, TextItemData> ItemDict)

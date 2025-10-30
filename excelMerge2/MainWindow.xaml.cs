@@ -65,7 +65,8 @@ namespace excelMerge2
             int sourceCount = SafeRow.GetCount(sourceRow);
             for (int i = 1; i <= sourceCount; i++)
             {
-                string sourceValue = sourceRow.Cell(i).GetString();
+                IXLCell cell = sourceRow.Cell(i);
+                string sourceValue = SafeRow.GetValue(cell);
                 targetRow.Cell(i).Value = sourceValue;
             }
         }
@@ -74,7 +75,6 @@ namespace excelMerge2
         {
             PrimaryKeySubs.Clear();
             const int PrimaryKeyRowNumber = 3;
-            int a = Rows.Count();
             if (Rows.Count() > PrimaryKeyRowNumber)
             {
                 IXLCells KeyConfigRow = Rows.ElementAt(PrimaryKeyRowNumber).CellsUsed();
@@ -86,7 +86,7 @@ namespace excelMerge2
                         PrimaryKeySubs.Add(i + 1); //取的时候是通过IXLRow.Cell(i)取的，从1开始
                     }
                 }
-            }    
+            }
         }
 
         public string GetPrimaryKey(IXLRow r)
@@ -253,12 +253,12 @@ namespace excelMerge2
             }
         }
 
-        void UpdateList(bool bFirst = false)
+        public void UpdateList(bool bInitSheetsList = false)
         {
             //清空之前数据
             InitData();
             Scroller.InitScroller();
-            if (bFirst)
+            if (bInitSheetsList)
             {
                 ListSheet.Items.Clear();
                 LeftSheetId = 1;
@@ -287,7 +287,7 @@ namespace excelMerge2
             return UpdateGridListBySheet(bReturnWhenFound);
         }
 
-        bool UpdateGridListBySheet(bool bReturnWhenFound = false)
+        public bool UpdateGridListBySheet(bool bReturnWhenFound = false)
         {
             bool bOnlyShowDiff = IsShowOnlyDiff();
             int DiffNum = 0;
@@ -412,7 +412,7 @@ namespace excelMerge2
             return (DataTemplate)XamlReader.Parse(xaml);
         }
 
-        void ClearGridList()
+        public void ClearGridList()
         {
             LeftAllItemData.Clear();
             RightAllItemData.Clear();
@@ -468,7 +468,7 @@ namespace excelMerge2
             Dictionary<string, IXLRow> sourceRowDict = bLeft ? SheetCacheData.LeftRowDict : SheetCacheData.RightRowDict;
             Dictionary<string, IXLRow> targetRowDict = bLeft ? SheetCacheData.RightRowDict : SheetCacheData.LeftRowDict;
             IXLWorksheet TargetSheet = bLeft ? App.GetApp().RightSheet : App.GetApp().LeftSheet;
-            //把source的ItemDatas转成Rows
+            
             foreach (ItemData i in sourceItems)
             {
                 var key = i.GetKey();
