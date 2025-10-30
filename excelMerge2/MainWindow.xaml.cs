@@ -419,7 +419,7 @@ namespace excelMerge2
         }
 
         //select
-        ItemData GetItemFromDict(ItemData sourceItem, Dictionary<string, ItemData> ItemDict)
+        public static ItemData GetItemFromDict(ItemData sourceItem, Dictionary<string, ItemData> ItemDict)
         {
             return ItemDict[sourceItem.GetKey()];
         }

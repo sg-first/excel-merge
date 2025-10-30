@@ -112,6 +112,11 @@ namespace excelMerge2
             IXLWorksheet TargetSheet = bLeft ? App.GetApp().RightSheet : App.GetApp().LeftSheet;
         }
 
+        public static TextItemData GetItemFromDict(TextItemData sourceItem, Dictionary<string, TextItemData> ItemDict)
+        {
+            return ItemDict[sourceItem.GetKey()];
+        }
+
         private void List_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (!bSyncingSv)
@@ -121,20 +126,20 @@ namespace excelMerge2
                 ListBox targetList = bLeft ? ListRight : ListLeft;
                 Dictionary<string, TextItemData> targetItemDict = bLeft ? RightItemDict : LeftItemDict;
                 bSyncingSv = true;
-                /*if (e.AddedItems.Count > 0)
+                if (e.AddedItems.Count > 0)
                 {
                     //添加
-                    ItemData sourceItem = (ItemData)e.AddedItems[0];
-                    ItemData targetItem = GetItemFromDict(sourceItem, targetItemDict);
+                    TextItemData sourceItem = (TextItemData)e.AddedItems[0];
+                    TextItemData targetItem = GetItemFromDict(sourceItem, targetItemDict);
                     targetList.SelectedItems.Add(targetItem);
                 }
                 else
                 {
                     //删除
-                    ItemData sourceItem = (ItemData)e.RemovedItems[0];
-                    ItemData targetItem = GetItemFromDict(sourceItem, targetItemDict);
+                    TextItemData sourceItem = (TextItemData)e.RemovedItems[0];
+                    TextItemData targetItem = GetItemFromDict(sourceItem, targetItemDict);
                     targetList.SelectedItems.Remove(targetItem);
-                }*/
+                }
                 bSyncingSv = false;
             }
         }
