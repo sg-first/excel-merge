@@ -44,7 +44,8 @@ namespace excelMerge2
         ScrollSyncer Scroller; //滚动同步
         bool bSyncingSv = false; //左右同步中标记
 
-        bool IsLeft(bool bSourceLeft, bool bSource)
+        //diff
+        public static bool IsLeft(bool bSourceLeft, bool bSource)
         {
             if (bSourceLeft)
             {
@@ -73,7 +74,7 @@ namespace excelMerge2
         IXLWorksheet GetSourceOrTargetSheet(bool bSourceLeft, bool bSource)
         {
             bool bLeft = IsLeft(bSourceLeft, bSource);
-            IXLWorksheet sheet = bLeft ? App.GetApp().RightSheet : App.GetApp().LeftSheet;
+            IXLWorksheet sheet = bLeft ? App.GetApp().LeftSheet : App.GetApp().RightSheet;
             return sheet;
         }
 
@@ -84,10 +85,22 @@ namespace excelMerge2
             return sheet;
         }
 
-        string GetColFirstValue(IXLWorksheet sheet, int i)
+        public static string GetColFirstValue(IXLWorksheet sheet, int i)
         {
             IXLCell cell = sheet.Cell(1, i);
             return SafeRow.GetValue(cell);
+        }
+
+        public static Dictionary<string, int> GetValueToNumberDict(IXLWorksheet sheet)
+        {
+            var ret = new Dictionary<string, int>();
+            int count = sheet.LastColumnUsed().ColumnNumber();
+            for (int i = 1; i <= count; i++)
+            {
+                string value = GetColFirstValue(sheet, i);
+                ret[value] = i;
+            }
+            return ret;
         }
 
         void UpdateList()
@@ -95,37 +108,32 @@ namespace excelMerge2
             int lCount = App.GetApp().LeftSheet.LastColumnUsed().ColumnNumber();
             int rCount = App.GetApp().RightSheet.LastColumnUsed().ColumnNumber();
             bool bSourceLeft = lCount >= rCount;
-            int sourceCount = Math.Max(lCount, rCount);
-            int targetCount = Math.Min(lCount, rCount);
-            //把target的所有值放到set里，后面要查有无
+            //建target的 value->number 映射
             IXLWorksheet sourceSheet = GetSourceOrTargetSheet(bSourceLeft, true);
             IXLWorksheet targetSheet = GetSourceOrTargetSheet(bSourceLeft, false);
-            var targetValueToNumberDict = new Dictionary<string, int>();
-            for (int i = 1; i <= targetCount; i++)
-            {
-                string value = GetColFirstValue(targetSheet, i);
-                targetValueToNumberDict[value] = i;
-            }
+            Dictionary<string, int> sourceValueToNumberDict = GetValueToNumberDict(sourceSheet);
+            Dictionary<string, int> targetValueToNumberDict = GetValueToNumberDict(targetSheet);
+            Dictionary<string, int>.KeyCollection sourceValues = sourceValueToNumberDict.Keys;
+            Dictionary<string, int>.KeyCollection targetValues = targetValueToNumberDict.Keys;
+            IEnumerable<string> AllValues = sourceValues.Union(targetValues);
             //进行diff
             ListBox sourceList = GetSourceOrTargetList(bSourceLeft, true);
             ListBox targetList = GetSourceOrTargetList(bSourceLeft, false);
-            int targetI = 1;
-            for (int i = 1; i <= sourceCount; i++)
+            foreach (string value in AllValues)
             {
-                string value = GetColFirstValue(sourceSheet, i);
-                TextItemData sourceItemData = new TextItemData(value, value);
-                TextItemData targetItemData;
-                if (targetValueToNumberDict.TryGetValue(value, out targetI))
+                string sourcContent = sourceValues.Contains(value) ? value : "";
+                string targetContent = targetValues.Contains(value) ? value : "";
+                TextItemData sourceItemData = new TextItemData(value, sourcContent);
+                TextItemData targetItemData = new TextItemData(value, targetContent);
+                if (sourcContent == targetContent)
                 {
                     //相同元素
-                    targetItemData = new TextItemData(value, value);
                     sourceItemData.Foreground = Brushes.Black;
                     targetItemData.Foreground = Brushes.Black;
                 }
                 else
                 {
                     //存在差异
-                    targetItemData = new TextItemData(value, "");
                     sourceItemData.Foreground = Brushes.Red;
                     targetItemData.Foreground = Brushes.Red;
                 }
@@ -134,6 +142,7 @@ namespace excelMerge2
             }
         }
 
+        //sync
         void SyncData(System.Collections.IList sourceItems, bool bLeft)
         {
             IXLWorksheet TargetSheet = bLeft ? App.GetApp().RightSheet : App.GetApp().LeftSheet;
