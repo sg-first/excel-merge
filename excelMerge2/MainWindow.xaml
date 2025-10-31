@@ -77,6 +77,10 @@
             <Label Content="0" Name="LabelDiffNum" HorizontalAlignment="Left" Margin="5,0" Padding="0" VerticalAlignment="Center" VerticalContentAlignment="Center"/>
             <Button Content="Diff Col" Width="60" Margin="4,0" VerticalAlignment="Center" Click="DiffCol_Click"/>
         </StackPanel>
-        
+
+        <StackPanel Grid.Row="2" Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center" Margin="4,4.333,0,3.667">
+            <TextBox Height="23" Name="TextBoxPK" TextWrapping="Wrap" Text="" Width="110"/>
+            <Button Content="Set PK" Width="60" Margin="4,0" VerticalAlignment="Center" Click="SetPK_Click"/>
+        </StackPanel>
     </Grid>
 </Window>

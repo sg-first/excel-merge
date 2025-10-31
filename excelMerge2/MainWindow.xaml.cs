@@ -46,11 +46,18 @@ namespace excelMerge2
     {
         IEnumerable<IXLRow> Rows;
         List<int> PrimaryKeySubs = new List<int>();
-        public HelperRows(IEnumerable<IXLRow> InRows) 
+        public HelperRows(IEnumerable<IXLRow> InRows, List<int> InPrimaryKeySubs = null)
         { 
             Rows = InRows;
             //PrimaryKeySubs.Add(1);
-            SetPrimaryKeySubs();
+            if (InPrimaryKeySubs != null)
+            {
+                PrimaryKeySubs = InPrimaryKeySubs;
+            }
+            else
+            {
+                SetPrimaryKeySubs();
+            }
         }
 
         public Dictionary<string, IXLRow> RowsToDict()
@@ -176,10 +183,11 @@ namespace excelMerge2
             public Dictionary<string, IXLRow> LeftRowDict, RightRowDict;
             public IEnumerable<string> AllKeys;
             public IDictionary<int, int> LeftMaxLengthDict, RightMaxLengthDict;
-            public void SetRowDict(IEnumerable<IXLRow> LeftRows, IEnumerable<IXLRow> RightRows)
+
+            public void SetRowDict(IEnumerable<IXLRow> LeftRows, IEnumerable<IXLRow> RightRows, List<int> PrimaryKeySubs = null)
             {
-                HelperRows LeftHelper = new HelperRows(LeftRows);
-                HelperRows RightHelper = new HelperRows(RightRows);
+                HelperRows LeftHelper = new HelperRows(LeftRows, PrimaryKeySubs);
+                HelperRows RightHelper = new HelperRows(RightRows, PrimaryKeySubs);
                 LeftRowDict = LeftHelper.RowsToDict();
                 RightRowDict = RightHelper.RowsToDict();
                 AllKeys = LeftRowDict.Keys.Union(RightRowDict.Keys);
@@ -275,6 +283,7 @@ namespace excelMerge2
             Scroller.InitScroller();
             if (bInitSheetsList)
             {
+                TextBoxPK.Text = "";
                 ListSheet.Items.Clear();
                 LeftSheetId = 1;
                 RightSheetId = 1;
@@ -288,6 +297,25 @@ namespace excelMerge2
             return LoadAndUpdateGridListBySheet(InLeftSheetId, InRightSheetId, true);
         }
 
+        public List<int> GetPrimaryKeySubs()
+        {
+            string Content = TextBoxPK.Text;
+            if (Content != "")
+            {
+                string[] PKSubs = Content.Split(',');
+                List<int> Ret = new List<int>();
+                foreach (string i in PKSubs)
+                {
+                    Ret.Add(int.Parse(i));
+                }
+                return Ret;
+            }
+            else
+            {
+                return null;
+            }
+        }
+
         //根据sheet内容刷新UI
         //bReturnWhenFound: true时只返回有无差异，不做表现
         bool LoadAndUpdateGridListBySheet(int InLeftSheetId, int InRightSheetId, bool bReturnWhenFound = false)
@@ -298,7 +326,8 @@ namespace excelMerge2
             IEnumerable<IXLRow> LeftRows = App.GetApp().LeftSheet.RowsUsed().Where(r => !r.IsEmpty());
             IEnumerable<IXLRow> RightRows = App.GetApp().RightSheet.RowsUsed().Where(r => !r.IsEmpty());
             TitleRow = LeftRows.First();
-            SheetCacheData.SetRowDict(LeftRows, RightRows);
+            List<int> PrimaryKeySubs = GetPrimaryKeySubs();
+            SheetCacheData.SetRowDict(LeftRows, RightRows, PrimaryKeySubs);
 
             return UpdateGridListBySheet(bReturnWhenFound);
         }
@@ -606,6 +635,7 @@ namespace excelMerge2
                 int NewRightSheetId = GetSheetSub(RightBook, Text);
                 if (LeftSheetId != NewLeftSheetId || RightSheetId != NewRightSheetId)
                 {
+                    TextBoxPK.Text = "";
                     LeftSheetId = NewLeftSheetId;
                     RightSheetId = NewRightSheetId;
                     UpdateList();
@@ -628,6 +658,12 @@ namespace excelMerge2
         }
 
         private void CheckBox_Click(object sender, RoutedEventArgs e)
+        {
+            ClearGridList();
+            UpdateGridListBySheet(false);
+        }
+
+        private void SetPK_Click(object sender, RoutedEventArgs e)
         {
             ClearGridList();
             UpdateGridListBySheet(false);
