@@ -242,7 +242,7 @@ namespace excelMerge2
             foreach (IXLWorksheet sheet in IntersectionBook.Worksheets)
             {
                 TextBlock tb = new TextBlock();
-                var r = new Run(sheet.Name);
+                tb.Text = sheet.Name;
                 //判断两个sheet是否相同
                 int OtherSheetId = GetSheetSub(OtherBook, sheet.Name);
                 int LeftSheetId, RightSheetId;
@@ -263,8 +263,7 @@ namespace excelMerge2
                     this.RightSheetId = RightSheetId;
                 }
                 //设置item UI
-                r.Foreground = bDiff ? Brushes.Red : Brushes.Black;
-                tb.Inlines.Add(r);
+                tb.Foreground = bDiff ? Brushes.Red : Brushes.Black;
                 ListSheet.Items.Add(tb);
                 IntersectionSheetId++;
             }
@@ -629,8 +628,7 @@ namespace excelMerge2
             TextBlock tb = (TextBlock)SheetList.SelectedItem;
             if(tb != null)
             {
-                var r = (Run)tb.Inlines.FirstInline;
-                string Text = r.Text;
+                string Text = tb.Text;
                 int NewLeftSheetId = GetSheetSub(LeftBook, Text);
                 int NewRightSheetId = GetSheetSub(RightBook, Text);
                 if (LeftSheetId != NewLeftSheetId || RightSheetId != NewRightSheetId)
@@ -665,8 +663,7 @@ namespace excelMerge2
 
         private void SetPK_Click(object sender, RoutedEventArgs e)
         {
-            ClearGridList();
-            UpdateGridListBySheet(false);
+            UpdateList(false);
         }
     }
 }
