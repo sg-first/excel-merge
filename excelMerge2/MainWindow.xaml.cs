@@ -167,7 +167,7 @@ namespace excelMerge2
         //表数据
         string LeftPath, RightPath;
         XLWorkbook LeftBook, RightBook;
-        int LeftSheetId = 1, RightSheetId = 1;
+        int LeftSheetId = -1, RightSheetId = -1;
         IXLRow TitleRow;
         string SaveAsPath = null;
         //sheet缓存数据
@@ -226,6 +226,9 @@ namespace excelMerge2
             bool bIntersectionIsLeft = LeftBook.Worksheets.Count < RightBook.Worksheets.Count;
             XLWorkbook IntersectionBook = bIntersectionIsLeft ? LeftBook : RightBook;
             XLWorkbook OtherBook = bIntersectionIsLeft ? RightBook : LeftBook;
+            //要打开的sheetId先置空，找到第一个diff sheet时设值
+            this.LeftSheetId = -1;
+            this.RightSheetId = -1;
             //如果要改成union需要处理merge时逻辑：sheet找不到时建表
             int IntersectionSheetId = 1;
             foreach (IXLWorksheet sheet in IntersectionBook.Worksheets)
@@ -246,11 +249,22 @@ namespace excelMerge2
                     RightSheetId = IntersectionSheetId;
                 }
                 bool bDiff = IsDiffSheet(LeftSheetId, RightSheetId); //看是否相同
+                if (bDiff && this.LeftSheetId == -1) //设置第一个差异的sheet为首个预览的sheet
+                {
+                    this.LeftSheetId = LeftSheetId;
+                    this.RightSheetId = RightSheetId;
+                }
                 //设置item UI
                 r.Foreground = bDiff ? Brushes.Red : Brushes.Black;
                 tb.Inlines.Add(r);
                 ListSheet.Items.Add(tb);
                 IntersectionSheetId++;
+            }
+
+            if (this.LeftSheetId == -1)
+            {
+                this.LeftSheetId = 1;
+                this.RightSheetId = 1;
             }
         }
 
