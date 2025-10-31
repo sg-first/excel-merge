@@ -261,6 +261,7 @@ namespace excelMerge2
                 {
                     this.LeftSheetId = LeftSheetId;
                     this.RightSheetId = RightSheetId;
+                    ListSheet.SelectedItem = tb;
                 }
                 //设置item UI
                 tb.Foreground = bDiff ? Brushes.Red : Brushes.Black;
@@ -272,6 +273,7 @@ namespace excelMerge2
             {
                 this.LeftSheetId = 1;
                 this.RightSheetId = 1;
+                ListSheet.SelectedItem = ListSheet.Items[0];
             }
         }
 
@@ -481,28 +483,22 @@ namespace excelMerge2
                 bool bLeft = sourceList == ListLeft;
                 ListBox targetList = bLeft ? ListRight : ListLeft;
                 Dictionary<string, ItemData> targetItemDict = bLeft ? SheetCacheData.RightItemDict : SheetCacheData.LeftItemDict;
-                try
+                bSyncingSv = true;
+                if (e.AddedItems.Count > 0)
                 {
-                    bSyncingSv = true;
-                    if (e.AddedItems.Count > 0)
-                    {
-                        //添加
-                        ItemData sourceItem = (ItemData)e.AddedItems[0];
-                        ItemData targetItem = GetItemFromDict(sourceItem, targetItemDict);
-                        targetList.SelectedItems.Add(targetItem);
-                    }
-                    else
-                    {
-                        //删除
-                        ItemData sourceItem = (ItemData)e.RemovedItems[0];
-                        ItemData targetItem = GetItemFromDict(sourceItem, targetItemDict);
-                        targetList.SelectedItems.Remove(targetItem);
-                    }
+                    //添加
+                    ItemData sourceItem = (ItemData)e.AddedItems[0];
+                    ItemData targetItem = GetItemFromDict(sourceItem, targetItemDict);
+                    targetList.SelectedItems.Add(targetItem);
                 }
-                finally
+                else
                 {
-                    bSyncingSv = false;
+                    //删除
+                    ItemData sourceItem = (ItemData)e.RemovedItems[0];
+                    ItemData targetItem = GetItemFromDict(sourceItem, targetItemDict);
+                    targetList.SelectedItems.Remove(targetItem);
                 }
+                bSyncingSv = false;
             }
         }
 

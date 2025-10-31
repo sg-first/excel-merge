@@ -21,7 +21,7 @@ namespace excelMerge2
     public class TextItemData : TextBlock
     {
         string key;
-        public TextItemData(string InKey, string Content) 
+        public TextItemData(string InKey, string Content)
         { 
             key = InKey;
             Text = Content;
@@ -35,6 +35,14 @@ namespace excelMerge2
         {
             InitializeComponent();
             UpdateList();
+        }
+
+        protected override void OnContentRendered(EventArgs e)
+        {
+            base.OnContentRendered(e);
+            //初始化滚动同步
+            Scroller = new ScrollSyncer(ListLeft, ListRight);
+            Scroller.InitScroller();
         }
 
         //记录ItemData
@@ -59,10 +67,6 @@ namespace excelMerge2
                 LeftValueToColDict.Clear();
                 RightValueToColDict.Clear();
             }
-            //初始化滚动同步
-            Scroller = new ScrollSyncer(ListLeft, ListRight);
-            Scroller.InitScroller();
-
             UpdateListRaw();
         }
 

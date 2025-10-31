@@ -25,20 +25,19 @@ namespace excelMerge2
         {
             try
             {
-                string rawStr = Cell.GetString();
                 string cacheStr = Cell.CachedValue.ToString();
-                if (rawStr == "" && cacheStr != "")
+                if (cacheStr != "")
                 {
                     return cacheStr;
                 }
                 else
                 {
-                    return rawStr;
+                    return Cell.GetString();
                 }
             }
             catch (NotImplementedException)
             {
-                return Cell.CachedValue.ToString();
+                return "";
             }
         }
 
