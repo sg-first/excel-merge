@@ -139,6 +139,27 @@ namespace excelMerge2
     public partial class App : Application
     {
         public IXLWorksheet LeftSheet, RightSheet;
+        public bool bRightSheetHasToString = false;
+
+        static public void SheetFormulaToString(IXLWorksheet sheet)
+        {
+            var formulaCells = sheet.CellsUsed(c => c.HasFormula).ToList();
+
+            foreach (var cell in formulaCells)
+            {
+                //cell.Clear(XLClearOptions.Formula);
+                cell.SetValue(cell.CachedValue.ToString());
+            }
+        }
+
+        public void RightSheetFormulaToString()
+        {
+            if (!bRightSheetHasToString)
+            {
+                SheetFormulaToString(RightSheet);
+                bRightSheetHasToString = true;
+            }
+        }
 
         public static App GetApp()
         {

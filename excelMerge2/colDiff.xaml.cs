@@ -135,12 +135,13 @@ namespace excelMerge2
             {
                 IXLCell cell = sourceCol.Cell(i);
                 string sourceValue = SafeRow.GetValue(cell);
-                targetCol.Cell(i).Value = sourceValue;
+                targetCol.Cell(i).SetValue(sourceValue);
             }
         }
 
         void SyncData(System.Collections.IList sourceItems, bool bLeft)
         {
+            App.GetApp().RightSheetFormulaToString();
             Dictionary<string, IXLColumn> sourceValueToColDict = bLeft ? LeftValueToColDict : RightValueToColDict;
             Dictionary<string, IXLColumn> targetValueToColDict = bLeft ? RightValueToColDict : LeftValueToColDict;
             IXLWorksheet TargetSheet = bLeft ? App.GetApp().RightSheet : App.GetApp().LeftSheet;

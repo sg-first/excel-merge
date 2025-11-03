@@ -227,6 +227,7 @@ namespace excelMerge2
         {
             ClearGridList();
             SheetCacheData.Clear();
+            App.GetApp().bRightSheetHasToString = false;
         }
 
         void InitSheetsList()
