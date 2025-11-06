@@ -73,9 +73,10 @@
              MinWidth="100" MinHeight="100"/>
 
         <StackPanel Grid.Row="2" Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="4,4.333,0,3.667">
-            <CheckBox Content="仅显示差异" Name="CheckBoxOnlyDiff" HorizontalAlignment="Left" Margin="4,0" VerticalAlignment="Center" IsChecked="True" Click="CheckBox_Click"/>
+            <CheckBox Content="仅显示差异" Name="CheckBoxOnlyDiff" HorizontalAlignment="Left" Margin="4,0" VerticalAlignment="Center" IsChecked="True" Click="CheckDiff_Click"/>
             <Label Content="0" Name="LabelDiffNum" HorizontalAlignment="Left" Margin="5,0" Padding="0" VerticalAlignment="Center" VerticalContentAlignment="Center"/>
             <Button Content="Diff Col" Width="60" Margin="4,0" VerticalAlignment="Center" Click="DiffCol_Click"/>
+            <CheckBox Content="全选" Name="CheckBoxSelectAll" HorizontalAlignment="Left" Margin="4,0" VerticalAlignment="Center" IsChecked="True" Click="CheckSelect_Click"/>
         </StackPanel>
 
         <StackPanel Grid.Row="2" Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center" Margin="4,4.333,0,3.667">

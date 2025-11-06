@@ -219,6 +219,9 @@ namespace excelMerge2
         //和GridList UI数据绑定的Data
         public ObservableCollection<ItemData> LeftAllItemData { get; } = new ObservableCollection<ItemData>();
         public ObservableCollection<ItemData> RightAllItemData { get; } = new ObservableCollection<ItemData>();
+        //所有差异Item
+        public List<ItemData> LeftAllDiffItemData = new List<ItemData>();
+        public List<ItemData> RightAllDiffItemData = new List<ItemData>();
         ScrollSyncer Scroller; //滚动同步
         bool bSyncingSv = false; //左右同步中标记
         colDiff ColDiffWindow = null; //colDiff用的子窗体
@@ -336,7 +339,7 @@ namespace excelMerge2
 
         public bool UpdateGridListBySheet(bool bReturnWhenFound = false)
         {
-            bool bOnlyShowDiff = IsShowOnlyDiff();
+            bool bOnlyShowDiff = IsCheck(CheckBoxOnlyDiff);
             int DiffNum = 0;
             foreach (string key in SheetCacheData.AllKeys)
             {
@@ -389,12 +392,13 @@ namespace excelMerge2
                         //选中所有差异
                         if (bRowHasDiff)
                         {
-                            ListLeft.SelectedItems.Add(LeftItem);
-                            ListRight.SelectedItems.Add(RightItem);
+                            LeftAllDiffItemData.Add(LeftItem);
+                            RightAllDiffItemData.Add(RightItem);
                         }
                     }
                 }
             }
+            CheckSelect_Click(null, null); //根据checkBox状态，把要选中的（所有差异）设置到listBox
 
             if (!bReturnWhenFound)
             {
@@ -463,6 +467,8 @@ namespace excelMerge2
         {
             LeftAllItemData.Clear();
             RightAllItemData.Clear();
+            LeftAllDiffItemData.Clear();
+            RightAllDiffItemData.Clear();
         }
 
         //select
@@ -602,6 +608,7 @@ namespace excelMerge2
             {
                 RightBook.SaveAs(SaveAsPath);
             }
+            MessageBox.Show("Save completed");
         }
 
         //多sheet选择
@@ -639,9 +646,21 @@ namespace excelMerge2
         }
 
         //checkBox
-        bool IsShowOnlyDiff()
+        void SetListBoxSelectedItems(ListBox lb, List<ItemData> Items = null)
         {
-            bool? CheckValue = CheckBoxOnlyDiff.IsChecked;
+            lb.SelectedItems.Clear();
+            if (Items != null)
+            {
+                foreach (ItemData Item in Items)
+                {
+                    lb.SelectedItems.Add(Item);
+                }
+            }
+        }
+
+        bool IsCheck(CheckBox cb)
+        {
+            bool? CheckValue = cb.IsChecked;
             if(CheckValue != null)
             {
                 return (bool)CheckValue;
@@ -652,10 +671,24 @@ namespace excelMerge2
             }
         }
 
-        private void CheckBox_Click(object sender, RoutedEventArgs e)
+        private void CheckDiff_Click(object sender, RoutedEventArgs e)
         {
             ClearGridList();
             UpdateGridListBySheet(false);
+        }
+
+        private void CheckSelect_Click(object sender, RoutedEventArgs e)
+        {
+            if (IsCheck(CheckBoxSelectAll))
+            {
+                SetListBoxSelectedItems(ListLeft, LeftAllDiffItemData);
+                SetListBoxSelectedItems(ListRight, RightAllDiffItemData);
+            }
+            else
+            {
+                SetListBoxSelectedItems(ListLeft);
+                SetListBoxSelectedItems(ListRight);
+            }
         }
 
         private void SetPK_Click(object sender, RoutedEventArgs e)

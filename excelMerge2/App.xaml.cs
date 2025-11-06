@@ -42,6 +42,27 @@ namespace excelMerge2
             }
         }
 
+        public static XLCellValue GetValueRaw(IXLCell Cell)
+        {
+            try
+            {
+                XLCellValue rawStr = Cell.Value;
+                XLCellValue cacheStr = Cell.CachedValue;
+                if (rawStr.ToString() == "" && cacheStr.ToString() != "")
+                {
+                    return cacheStr;
+                }
+                else
+                {
+                    return rawStr;
+                }
+            }
+            catch (NotImplementedException)
+            {
+                return Cell.CachedValue;
+            }
+        }
+
         public string GetValue(int i)
         {
             if (Data != null)
