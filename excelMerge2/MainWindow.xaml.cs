@@ -73,8 +73,7 @@ namespace excelMerge2
             for (int i = 1; i <= sourceCount; i++)
             {
                 IXLCell cell = sourceRow.Cell(i);
-                string sourceValue = SafeRow.GetValue(cell);
-                targetRow.Cell(i).Value = sourceValue;
+                targetRow.Cell(i).Value = SafeRow.GetValueRaw(cell);
             }
         }
         

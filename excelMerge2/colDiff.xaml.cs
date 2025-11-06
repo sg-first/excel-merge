@@ -134,8 +134,7 @@ namespace excelMerge2
             for (int i = 1; i <= sourceCount; i++)
             {
                 IXLCell cell = sourceCol.Cell(i);
-                string sourceValue = SafeRow.GetValue(cell);
-                targetCol.Cell(i).SetValue(sourceValue);
+                targetCol.Cell(i).SetValue(SafeRow.GetValueRaw(cell));
             }
         }
 
