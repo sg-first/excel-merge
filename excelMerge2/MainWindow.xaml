@@ -75,13 +75,13 @@
         <StackPanel Grid.Row="2" Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="4,4.333,0,3.667">
             <CheckBox Content="仅显示差异" Name="CheckBoxOnlyDiff" HorizontalAlignment="Left" Margin="4,0" VerticalAlignment="Center" IsChecked="True" Click="CheckDiff_Click"/>
             <Label Content="0" Name="LabelDiffNum" HorizontalAlignment="Left" Margin="5,0" Padding="0" VerticalAlignment="Center" VerticalContentAlignment="Center"/>
-            <Button Content="Diff Col" Width="60" Margin="4,0" VerticalAlignment="Center" Click="DiffCol_Click"/>
+            <Button Content="列差异" Width="60" Margin="4,0" VerticalAlignment="Center" Click="DiffCol_Click"/>
             <CheckBox Content="全选差异" Name="CheckBoxSelectAll" HorizontalAlignment="Left" Margin="4,0" VerticalAlignment="Center" IsChecked="True" Click="CheckSelect_Click"/>
         </StackPanel>
 
         <StackPanel Grid.Row="2" Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center" Margin="4,4.333,0,3.667">
             <TextBox Height="23" Name="TextBoxPK" TextWrapping="Wrap" Text="" Width="110"/>
-            <Button Content="Set PK" Width="60" Margin="4,0" VerticalAlignment="Center" Click="SetPK_Click"/>
+            <Button Content="设置主键" Width="60" Margin="4,0" VerticalAlignment="Center" Click="SetPK_Click"/>
         </StackPanel>
     </Grid>
 </Window>

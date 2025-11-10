@@ -104,6 +104,7 @@ namespace excelMerge2
         }
 
         ScrollViewer svLeft, svRight;
+        double cacheVerticalOffset = 0;
         bool bSyncingSv = false;
 
         ScrollViewer FindScrollViewer(DependencyObject d)
@@ -125,6 +126,7 @@ namespace excelMerge2
 
         public void InitScroller()
         {
+            cacheVerticalOffset = 0;
             svLeft = FindScrollViewer(ListLeft);
             svRight = FindScrollViewer(ListRight);
             if (svLeft != null)
@@ -143,10 +145,15 @@ namespace excelMerge2
             {
                 var source = (ScrollViewer)sender;
                 var target = source == svLeft ? svRight : svLeft;
+                //先存一下，防止设了一个之后另一个改变
+                if (e.VerticalOffset != 0)
+                {
+                    cacheVerticalOffset = e.VerticalOffset;
+                }
                 try
                 {
                     bSyncingSv = true;
-                    target.ScrollToVerticalOffset(e.VerticalOffset);
+                    target.ScrollToVerticalOffset(cacheVerticalOffset);
                     target.ScrollToHorizontalOffset(e.HorizontalOffset);
                 }
                 finally
