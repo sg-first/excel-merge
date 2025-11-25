@@ -593,7 +593,7 @@ namespace excelMerge2
             {
                 File.SetAttributes(Path, attrs & ~FileAttributes.ReadOnly); //清除只读位
             }
-            Book.Save();
+            Book.Save(false, true);
         }
 
         private void Save_Click(object sender, RoutedEventArgs e)
@@ -605,7 +605,7 @@ namespace excelMerge2
             }
             else
             {
-                RightBook.SaveAs(SaveAsPath);
+                RightBook.SaveAs(SaveAsPath, false, true);
             }
             MessageBox.Show("Save completed");
         }
